@@ -155,6 +155,20 @@
       animation: pulseAlert 2s infinite ease-in-out;
     }
 
+    .position-chip {
+      min-width: 135px;
+      flex: 1 1 0%;
+      border-radius: 12px;
+      padding: 6px 8px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(15, 23, 42, 0.03);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease;
+    }
+
     @media print {
       body { background: #ffffff !important; padding: 0 !important; }
       .no-print { display: none !important; }
@@ -170,14 +184,14 @@
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyBLuv5W2Urq3EcseqMJUpuQt2DDHQLl2mE",
-  authDomain: "school-attendance-953a3.firebaseapp.com",
-  databaseURL: "https://school-attendance-953a3-default-rtdb.firebaseio.com",
-  projectId: "school-attendance-953a3",
-  storageBucket: "school-attendance-953a3.firebasestorage.app",
-  messagingSenderId: "563808863923",
-  appId: "1:563808863923:web:9fba6e84877fc6984452c6"
-};
+      apiKey: "AIzaSyBLuv5W2Urq3EcseqMJUpuQt2DDHQLl2mE",
+      authDomain: "school-attendance-953a3.firebaseapp.com",
+      databaseURL: "https://school-attendance-953a3-default-rtdb.firebaseio.com",
+      projectId: "school-attendance-953a3",
+      storageBucket: "school-attendance-953a3.firebasestorage.app",
+      messagingSenderId: "563808863923",
+      appId: "1:563808863923:web:9fba6e84877fc6984452c6"
+    };
 
     const fbApp = initializeApp(firebaseConfig);
     const fbDb = getDatabase(fbApp);
@@ -189,7 +203,7 @@
 
     window.saveToFirebase = async function() {
       try {
-        const cloudRef = window.fbRef(window.fbDb, 'schoolData2026');
+        const cloudRef = window.fbRef(window.fbDb, 'schoolDataActive');
         await window.fbSet(cloudRef, {
           students: window.activeData,
           staff: window.activeStaffData,
@@ -206,7 +220,7 @@
     };
 
     window.listenToFirebase = function() {
-      const cloudRef = window.fbRef(window.fbDb, 'schoolData2026');
+      const cloudRef = window.fbRef(window.fbDb, 'schoolDataActive');
       window.fbOnValue(cloudRef, (snapshot) => {
         const val = snapshot.val();
         if (val) {
@@ -214,7 +228,10 @@
           if (val.staff) window.activeStaffData = val.staff;
           if (val.leaves) window.leaveApplications = val.leaves;
 
-          window.saveAllLocal();
+          localStorage.setItem('local_school_students', JSON.stringify(window.activeData));
+          localStorage.setItem('local_school_staff', JSON.stringify(window.activeStaffData));
+          localStorage.setItem('local_school_leaves', JSON.stringify(window.leaveApplications));
+
           window.renderAllTables();
           window.populateTeacherClassSelect();
           window.onTeacherClassChanged();
@@ -223,6 +240,8 @@
           window.renderStaffLeaveSummaryTable();
           window.updatePendingBadge();
           if (window.populateAdminStaffEditDropdown) window.populateAdminStaffEditDropdown();
+          if (window.populateAdminClassRegisterSelect) window.populateAdminClassRegisterSelect();
+          if (window.populateAdminStaffStatusDropdown) window.populateAdminStaffStatusDropdown();
 
           const cloudStatus = document.getElementById('firebaseStatusText');
           if (cloudStatus) cloudStatus.innerText = "Firebase Synced ✓";
@@ -246,7 +265,6 @@
   <!-- ================= MAIN HEADER & CONTROLS ================= -->
   <header class="max-w-[1520px] mx-auto mb-3 glass-card p-3 sm:p-5 rounded-2xl border border-slate-200 no-print">
     
-    <!-- Title Center Section -->
     <div class="flex flex-col items-center justify-center text-center pb-3 border-b border-slate-200 gap-2">
       <div class="flex items-center justify-center gap-2.5">
         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-blue-900 via-indigo-900 to-blue-700 flex items-center justify-center text-white text-xl sm:text-2xl shadow-md shrink-0">
@@ -256,14 +274,13 @@
           <h1 class="text-base sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
             පාසල් පැමිණීම් හා නිවාඩු පද්ධතිය
           </h1>
-          <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 mono-num shadow-xs">2026</span>
+          <span id="headerYearBadge" class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 mono-num shadow-xs">2026</span>
         </div>
       </div>
-      <p class="text-[11px] sm:text-xs text-slate-500 font-medium max-w-xl">
-        දත්ත ස්වයංක්‍රීයව Firebase Cloud හා බ්‍රවුසරයේ සුරැකේ • නිවාඩු සීමා (Casual: 20 | Medical: 21 | Half Day: 2/month)
+      <p class="text-[11px] sm:text-xs text-slate-700 font-bold max-w-xl bg-slate-100 px-3 py-1 rounded-xl border border-slate-300">
+        සැකසීම:- එම් ඒ ආර් පසන් &nbsp;|&nbsp; දුරකථන අංකය:- 0706993367
       </p>
 
-      <!-- Action controls Center Scroller -->
       <div class="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar w-full pt-1.5">
         <div class="shrink-0 flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-xs">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -272,7 +289,7 @@
 
         <div class="shrink-0 flex items-center gap-1 bg-amber-50 border border-amber-300 text-amber-950 px-3 py-1.5 rounded-xl text-[10.5px] shadow-xs">
           <span class="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping"></span>
-          <span class="text-slate-500">8 PM Auto-Reset:</span>
+          <span class="text-slate-500">8 PM Student Reset:</span>
           <span id="autoResetCountdownText" class="mono-num text-blue-950 font-black">...</span>
         </div>
 
@@ -518,9 +535,9 @@
                 <tr>
                   <td class="text-left px-2 font-medium">ලේඛනය: ගැහැණු</td>
                   <td id="mat_reg_g_1_5" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_g_6_9" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_g_10_11" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_g_12_13" class="font-bold mono-num">0</td>
+                  <td id="mat_reg_b_6_9" class="font-bold mono-num">0</td>
+                  <td id="mat_reg_b_10_11" class="font-bold mono-num">0</td>
+                  <td id="mat_reg_b_12_13" class="font-bold mono-num">0</td>
                 </tr>
                 <tr class="bg-slate-100 font-black">
                   <td class="text-left px-2">ලේඛනයේ මුළු එකතුව</td>
@@ -623,100 +640,105 @@
     </section>
   </main>
 
-  <!-- ================= TAB 2: STAFF ATTENDANCE ================= -->
+  <!-- ================= TAB 2: STAFF ATTENDANCE (READ-ONLY STATUS) ================= -->
   <main id="teachersTab" class="tab-content hidden space-y-3 sm:space-y-4">
-    <!-- Hierarchy Breakdown Cards (Expanded to 7 categories) -->
+    <!-- Hierarchy Breakdown Cards -->
     <section class="max-w-[1520px] mx-auto no-print">
-      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-        <div class="glass-card p-2 rounded-xl border-l-4 border-l-rose-500">
-          <div class="flex justify-between items-start">
-            <span class="text-[9.5px] font-black text-rose-900">1. විදුහල්පති</span>
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        
+        <div class="position-chip border-l-4 border-l-rose-500 shrink-0">
+          <div class="flex justify-between items-center">
+            <span class="text-[9.5px] font-black text-rose-900 truncate">1. විදුහල්පති</span>
             <span class="text-[8.5px] bg-rose-100 text-rose-900 font-bold px-1 rounded">1</span>
           </div>
-          <div class="my-1">
-            <span id="cat_stat_principal" class="text-sm sm:text-base font-black mono-num text-rose-950">1/1</span>
-            <span id="cat_sub_principal" class="text-[8.5px] text-rose-700 block truncate">පැ: 1 | නි: 0</span>
+          <div class="my-0.5 flex items-baseline justify-between">
+            <span id="cat_stat_principal" class="text-xs sm:text-sm font-black mono-num text-rose-950">1/1</span>
+            <span id="cat_sub_principal" class="text-[8.5px] text-rose-700 font-semibold">පැ:1 නි:0</span>
           </div>
-          <div class="w-full bg-rose-100 rounded-full h-1"><div id="cat_bar_principal" class="bg-rose-600 h-1" style="width: 100%"></div></div>
+          <div class="w-full bg-rose-100 rounded-full h-1 mt-0.5"><div id="cat_bar_principal" class="bg-rose-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <div class="glass-card p-2 rounded-xl border-l-4 border-l-purple-500">
-          <div class="flex justify-between items-start">
-            <span class="text-[9.5px] font-black text-purple-900">2. නි. විදුහල්පති</span>
+        <div class="position-chip border-l-4 border-l-purple-500 shrink-0">
+          <div class="flex justify-between items-center">
+            <span class="text-[9.5px] font-black text-purple-900 truncate">2. නි.විදුහල්පති</span>
             <span class="text-[8.5px] bg-purple-100 text-purple-900 font-bold px-1 rounded">2</span>
           </div>
-          <div class="my-1">
-            <span id="cat_stat_vp" class="text-sm sm:text-base font-black mono-num text-purple-950">2/2</span>
-            <span id="cat_sub_vp" class="text-[8.5px] text-purple-700 block truncate">පැ: 2 | නි: 0</span>
+          <div class="my-0.5 flex items-baseline justify-between">
+            <span id="cat_stat_vp" class="text-xs sm:text-sm font-black mono-num text-purple-950">2/2</span>
+            <span id="cat_sub_vp" class="text-[8.5px] text-purple-700 font-semibold">පැ:2 නි:0</span>
           </div>
-          <div class="w-full bg-purple-100 rounded-full h-1"><div id="cat_bar_vp" class="bg-purple-600 h-1" style="width: 100%"></div></div>
+          <div class="w-full bg-purple-100 rounded-full h-1 mt-0.5"><div id="cat_bar_vp" class="bg-purple-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <!-- NEW: Assistant Vice Principal -->
-        <div class="glass-card p-2 rounded-xl border-l-4 border-l-indigo-500">
-          <div class="flex justify-between items-start">
-            <span class="text-[9.5px] font-black text-indigo-900">3. ස.නි. විදුහල්පති</span>
-            <span id="cat_badge_avp" class="text-[8.5px] bg-indigo-100 text-indigo-900 font-bold px-1 rounded">0</span>
+        <!-- Assistant Vice Principal (AVP) -->
+        <div class="position-chip border-l-4 border-l-indigo-500 shrink-0">
+          <div class="flex justify-between items-center">
+            <span class="text-[9.5px] font-black text-indigo-900 truncate">3. ස.නි.වි</span>
+            <span id="cat_badge_avp" class="text-[8.5px] bg-indigo-100 text-indigo-900 font-bold px-1 rounded">1</span>
           </div>
-          <div class="my-1">
-            <span id="cat_stat_avp" class="text-sm sm:text-base font-black mono-num text-indigo-950">0/0</span>
-            <span id="cat_sub_avp" class="text-[8.5px] text-indigo-700 block truncate">පැ: 0 | නි: 0</span>
+          <div class="my-0.5 flex items-baseline justify-between">
+            <span id="cat_stat_avp" class="text-xs sm:text-sm font-black mono-num text-indigo-950">1/1</span>
+            <span id="cat_sub_avp" class="text-[8.5px] text-indigo-700 font-semibold">පැ:1 නි:0</span>
           </div>
-          <div class="w-full bg-indigo-100 rounded-full h-1"><div id="cat_bar_avp" class="bg-indigo-600 h-1" style="width: 100%"></div></div>
+          <div class="w-full bg-indigo-100 rounded-full h-1 mt-0.5"><div id="cat_bar_avp" class="bg-indigo-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <!-- NEW: Sectional Head -->
-        <div class="glass-card p-2 rounded-xl border-l-4 border-l-cyan-600">
-          <div class="flex justify-between items-start">
-            <span class="text-[9.5px] font-black text-cyan-900">4. අංශ ප්‍රධාන</span>
-            <span id="cat_badge_section_head" class="text-[8.5px] bg-cyan-100 text-cyan-900 font-bold px-1 rounded">0</span>
+        <!-- Sectional Head (SECTION_HEAD) -->
+        <div class="position-chip border-l-4 border-l-cyan-600 shrink-0">
+          <div class="flex justify-between items-center">
+            <span class="text-[9.5px] font-black text-cyan-900 truncate">4. අංශ ප්‍රධාන</span>
+            <span id="cat_badge_section_head" class="text-[8.5px] bg-cyan-100 text-cyan-900 font-bold px-1 rounded">4</span>
           </div>
-          <div class="my-1">
-            <span id="cat_stat_section_head" class="text-sm sm:text-base font-black mono-num text-cyan-950">0/0</span>
-            <span id="cat_sub_section_head" class="text-[8.5px] text-cyan-700 block truncate">පැ: 0 | නි: 0</span>
+          <div class="my-0.5 flex items-baseline justify-between">
+            <span id="cat_stat_section_head" class="text-xs sm:text-sm font-black mono-num text-cyan-950">4/4</span>
+            <span id="cat_sub_section_head" class="text-[8.5px] text-cyan-700 font-semibold">පැ:4 නි:0</span>
           </div>
-          <div class="w-full bg-cyan-100 rounded-full h-1"><div id="cat_bar_section_head" class="bg-cyan-600 h-1" style="width: 100%"></div></div>
+          <div class="w-full bg-cyan-100 rounded-full h-1 mt-0.5"><div id="cat_bar_section_head" class="bg-cyan-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <div class="glass-card p-2 rounded-xl border-l-4 border-l-blue-600">
-          <div class="flex justify-between items-start">
-            <span class="text-[9.5px] font-black text-blue-900">5. ගුරු සේවය</span>
-            <span id="cat_badge_teacher" class="text-[8.5px] bg-blue-100 text-blue-900 font-bold px-1 rounded">36</span>
+        <!-- Teacher Service -->
+        <div class="position-chip border-l-4 border-l-blue-600 shrink-0">
+          <div class="flex justify-between items-center">
+            <span class="text-[9.5px] font-black text-blue-900 truncate">5. ගුරු සේවය</span>
+            <span id="cat_badge_teacher" class="text-[8.5px] bg-blue-100 text-blue-900 font-bold px-1 rounded">31</span>
           </div>
-          <div class="my-1">
-            <span id="cat_stat_teacher" class="text-sm sm:text-base font-black mono-num text-blue-950">36/36</span>
-            <span id="cat_sub_teacher" class="text-[8.5px] text-blue-700 block truncate">පැ: 36 | නි: 0</span>
+          <div class="my-0.5 flex items-baseline justify-between">
+            <span id="cat_stat_teacher" class="text-xs sm:text-sm font-black mono-num text-blue-950">31/31</span>
+            <span id="cat_sub_teacher" class="text-[8.5px] text-blue-700 font-semibold">පැ:31 නි:0</span>
           </div>
-          <div class="w-full bg-blue-100 rounded-full h-1"><div id="cat_bar_teacher" class="bg-blue-600 h-1" style="width: 100%"></div></div>
+          <div class="w-full bg-blue-100 rounded-full h-1 mt-0.5"><div id="cat_bar_teacher" class="bg-blue-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <div class="glass-card p-2 rounded-xl border-l-4 border-l-amber-500">
-          <div class="flex justify-between items-start">
-            <span class="text-[9.5px] font-black text-amber-900">6. සංවර්ධන නිලධාරී</span>
-            <span class="text-[8.5px] bg-amber-100 text-amber-900 font-bold px-1 rounded">7</span>
+        <!-- Development Officers -->
+        <div class="position-chip border-l-4 border-l-amber-500 shrink-0">
+          <div class="flex justify-between items-center">
+            <span class="text-[9.5px] font-black text-amber-900 truncate">6. සංවර්ධන නි.</span>
+            <span id="cat_badge_dev" class="text-[8.5px] bg-amber-100 text-amber-900 font-bold px-1 rounded">7</span>
           </div>
-          <div class="my-1">
-            <span id="cat_stat_dev" class="text-sm sm:text-base font-black mono-num text-amber-950">7/7</span>
-            <span id="cat_sub_dev" class="text-[8.5px] text-amber-800 block truncate">පැ: 7 | නි: 0</span>
+          <div class="my-0.5 flex items-baseline justify-between">
+            <span id="cat_stat_dev" class="text-xs sm:text-sm font-black mono-num text-amber-950">7/7</span>
+            <span id="cat_sub_dev" class="text-[8.5px] text-amber-800 font-semibold">පැ:7 නි:0</span>
           </div>
-          <div class="w-full bg-amber-100 rounded-full h-1"><div id="cat_bar_dev" class="bg-amber-600 h-1" style="width: 100%"></div></div>
+          <div class="w-full bg-amber-100 rounded-full h-1 mt-0.5"><div id="cat_bar_dev" class="bg-amber-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <div class="glass-card p-2 rounded-xl border-l-4 border-l-slate-600 col-span-2 sm:col-span-1">
-          <div class="flex justify-between items-start">
-            <span class="text-[9.5px] font-black text-slate-800">7. සහයක කා.ම.</span>
-            <span class="text-[8.5px] bg-slate-200 text-slate-800 font-bold px-1 rounded">4</span>
+        <!-- Support Staff -->
+        <div class="position-chip border-l-4 border-l-slate-600 shrink-0">
+          <div class="flex justify-between items-center">
+            <span class="text-[9.5px] font-black text-slate-800 truncate">7. සහයක කා.ම.</span>
+            <span id="cat_badge_support" class="text-[8.5px] bg-slate-200 text-slate-800 font-bold px-1 rounded">4</span>
           </div>
-          <div class="my-1">
-            <span id="cat_stat_support" class="text-sm sm:text-base font-black mono-num text-slate-900">4/4</span>
-            <span id="cat_sub_support" class="text-[8.5px] text-slate-600 block truncate">පැ: 4 | නි: 0</span>
+          <div class="my-0.5 flex items-baseline justify-between">
+            <span id="cat_stat_support" class="text-xs sm:text-sm font-black mono-num text-slate-900">4/4</span>
+            <span id="cat_sub_support" class="text-[8.5px] text-slate-600 font-semibold">පැ:4 නි:0</span>
           </div>
-          <div class="w-full bg-slate-200 rounded-full h-1"><div id="cat_bar_support" class="bg-slate-700 h-1" style="width: 100%"></div></div>
+          <div class="w-full bg-slate-200 rounded-full h-1 mt-0.5"><div id="cat_bar_support" class="bg-slate-700 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
+
       </div>
     </section>
 
-    <!-- Controls & Filters -->
+    <!-- Controls & Filters (Edit Buttons Removed - Pure Filter) -->
     <section class="max-w-[1520px] mx-auto glass-card p-2.5 sm:p-3 rounded-2xl flex flex-wrap items-center justify-between gap-2 no-print">
       <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
         <select id="staffDesignationFilter" class="bg-white border border-slate-300 text-xs font-bold rounded-xl px-2 py-2 text-slate-800 outline-none flex-1 sm:flex-initial" onchange="filterStaffTable()">
@@ -732,17 +754,12 @@
         <input type="text" id="staffSearchInput" placeholder="නම සොයන්න..." class="bg-white border border-slate-300 text-xs font-semibold rounded-xl px-3 py-2 w-full sm:w-44 outline-none" oninput="filterStaffTable()">
       </div>
 
-      <div class="flex items-center gap-1.5 w-full sm:w-auto">
-        <button onclick="markAllStaffPresent()" class="flex-1 sm:flex-initial bg-emerald-600 active:bg-emerald-700 text-white font-bold text-[11px] px-3 py-2 rounded-xl shadow">
-          ✅ සියල්ලෝම පැමිණි
-        </button>
-        <button onclick="clearAllStaffAttendance()" class="flex-1 sm:flex-initial bg-slate-700 active:bg-slate-800 text-white font-bold text-[11px] px-3 py-2 rounded-xl shadow">
-          ✖ හිස් කරන්න
-        </button>
+      <div class="text-[11px] text-slate-500 font-semibold flex items-center gap-1.5">
+        <span>🔒</span> පැමිණීමේ තත්ත්වය ස්වයංක්‍රීයව නිවාඩු මත හෝ විදුහල්පති පාලනයෙන් පමණක් වෙනස් වේ.
       </div>
     </section>
 
-    <!-- Staff List -->
+    <!-- Staff List (Locked Status Column - Read Only Badge) -->
     <section class="max-w-[1520px] mx-auto glass-card rounded-2xl p-2 sm:p-4">
       <div class="overflow-x-auto rounded-xl border border-slate-200">
         <table class="w-full text-xs min-w-[500px]">
@@ -768,13 +785,13 @@
           <span class="text-2xl sm:text-3xl">📝</span>
           <div>
             <h2 class="text-sm sm:text-lg font-black text-slate-900">ගුරුභවතුන්ගේ නිවාඩු අයදුම්පත</h2>
-            <p class="text-[10px] sm:text-xs text-slate-500">අයදුම් කළ වහාම නීතිමය සීමාවන් පරීක්ෂා කර පද්ධතියේ සටහන් වේ</p>
+            <p class="text-[10px] sm:text-xs text-slate-500">දින කිහිපයක් එකවර ඉල්ලුම් කළ හැක • Casual: 20 | Medical: 21 | Half Day: 2/mo</p>
           </div>
         </div>
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="text-[9.5px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md border border-amber-300">Casual: Max 20</span>
           <span class="text-[9.5px] font-bold bg-rose-100 text-rose-900 px-2 py-0.5 rounded-md border border-rose-300">Medical: Max 21</span>
-          <span class="text-[9.5px] font-bold bg-purple-100 text-purple-900 px-2 py-0.5 rounded-md border border-purple-300">Half Day: Max 2/mo</span>
+          <span class="text-[9.5px] font-bold bg-purple-100 text-purple-900 px-2 py-0.5 rounded-md border border-purple-300">Half Day: Max 2/mo (1/2)</span>
         </div>
       </div>
 
@@ -784,26 +801,31 @@
           <select id="leaveStaffSelect" required class="w-full bg-white border border-slate-300 rounded-xl p-2.5 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"></select>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block font-bold text-slate-800 mb-1">2. නිවාඩු වර්ගය:</label>
-            <select id="leaveTypeSelect" required class="w-full bg-white border border-slate-300 rounded-xl p-2.5 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm">
+            <select id="leaveTypeSelect" required onchange="handleLeaveTypeSelectionChange()" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm">
               <option value="" disabled selected>-- තෝරන්න --</option>
               <option value="CASUAL">අනියම් නිවාඩු (Casual Leave - උපරිම 20)</option>
               <option value="MEDICAL">අසනීප නිවාඩු (Medical Leave - උපරිම 21)</option>
               <option value="DUTY">රාජකාරී නිවාඩු (Duty Leave - වෙනමම එකතු වේ)</option>
-              <option value="HALF_DAY">අර්ධ දින නිවාඩු (Half Day - මසකට 2ක් පමණි)</option>
+              <option value="HALF_DAY">අර්ධ දින නිවාඩු (Half Day - 1/2 බැගින්)</option>
             </select>
           </div>
 
           <div>
-            <label class="block font-bold text-slate-800 mb-1">3. අදාළ දිනය:</label>
-            <input type="date" id="leaveDateInput" required class="w-full bg-white border border-slate-300 rounded-xl p-2 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm">
+            <label class="block font-bold text-slate-800 mb-1">3. ආරම්භක දිනය (From):</label>
+            <input type="date" id="leaveStartDateInput" required class="w-full bg-white border border-slate-300 rounded-xl p-2 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm" onchange="syncLeaveEndDatePicker()">
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-800 mb-1">4. අවසාන දිනය (To):</label>
+            <input type="date" id="leaveEndDateInput" required class="w-full bg-white border border-slate-300 rounded-xl p-2 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm">
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-800 mb-1">4. හේතුව:</label>
+          <label class="block font-bold text-slate-800 mb-1">5. හේතුව:</label>
           <textarea id="leaveReasonInput" rows="2" required placeholder="හේතුව සඳහන් කරන්න..." class="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"></textarea>
         </div>
 
@@ -820,11 +842,11 @@
           <span class="text-xl">📋</span>
           <div>
             <h3 class="font-extrabold text-xs sm:text-sm text-slate-900">ගුරුභවතුන්ගේ නිවාඩු සාරාංශ ලේඛනය (Leave Summary Table)</h3>
-            <p class="text-[10px] text-slate-500">සීමාවන්: Casual (20) | Medical (21) | Half-Day (2/මසකට) | Duty නිවාඩු වෙනමම සටහන් වේ</p>
+            <p class="text-[10px] text-slate-500">Half Day = 1/2 බැගින් එකතු වේ • මුළු එකතුව 10 ඉක්මවූ විට රතු පැහැයෙන් Highlight වේ</p>
           </div>
         </div>
         <div class="flex items-center gap-1.5 text-[9.5px] font-bold">
-          <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 font-extrabold">රතු කොටු = සීමාව ඉක්මවා ඇත (Max)</span>
+          <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 font-extrabold">🚨 මුළු පෞද්ගලික එකතුව > 10 Alert Highlight</span>
         </div>
       </div>
 
@@ -844,11 +866,11 @@
               </th>
               <th class="py-2 px-2 min-w-[85px] bg-purple-700 text-white border-r border-slate-700">
                 <span>⏳ Half Day</span>
-                <span class="block text-[9px] font-bold text-purple-200 uppercase">[2 / මසකට]</span>
+                <span class="block text-[9px] font-bold text-purple-200 uppercase">[1/2 බැගින්]</span>
               </th>
               <th class="py-2 px-2 min-w-[95px] bg-slate-900 text-amber-300 font-black border-r border-slate-700">
                 <span>මුළු පෞද්ගලික</span>
-                <span class="block text-[9px] font-normal text-slate-300">(Casual+Med+Half)</span>
+                <span class="block text-[9px] font-normal text-slate-300">(Cas+Med+1/2Half)</span>
               </th>
               <th class="py-2 px-2 min-w-[95px] bg-blue-800 text-white font-black">
                 <span>💼 Duty Leave</span>
@@ -872,13 +894,13 @@
     </div>
   </main>
 
-  <!-- ================= TAB 4: PRINCIPAL APPROVAL & ADMIN ================= -->
+  <!-- ================= TAB 4: PRINCIPAL APPROVAL & FULL ADMIN ================= -->
   <main id="adminApprovalTab" class="tab-content hidden space-y-3 sm:space-y-4">
     <!-- Lock Screen -->
     <div id="adminLockScreen" class="max-w-[420px] mx-auto glass-card p-5 sm:p-7 rounded-2xl sm:rounded-3xl border-2 border-slate-900 text-center my-6">
       <div class="w-12 h-12 bg-rose-100 text-rose-950 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-2">🔒</div>
       <h2 class="text-base sm:text-lg font-black text-slate-900 mb-1">විදුහල්පති / Admin රහස්‍ය පිවිසුම</h2>
-      <p class="text-[11px] text-slate-500 mb-4">අනුමැතිය ලබාදීමට හා තනතුරු වෙනස් කිරීමට මුරපදය ඇතුළත් කරන්න.</p>
+      <p class="text-[11px] text-slate-500 mb-4">සියලුම දත්ත සංස්කරණය හා අනුමැතිය ලබාදීමට මුරපදය ඇතුළත් කරන්න.</p>
       <form onsubmit="handleAdminLogin(event)" class="space-y-3">
         <input type="password" id="adminPasswordInput" placeholder="මුරපදය ඇතුළත් කරන්න..." class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-2.5 text-center font-mono font-bold text-sm outline-none focus:ring-2 focus:ring-rose-600">
         <button type="submit" class="w-full bg-rose-900 active:bg-rose-950 text-white font-black py-2.5 rounded-xl shadow transition">
@@ -886,7 +908,7 @@
         </button>
       </form>
       <div id="adminLoginError" class="hidden mt-2.5 p-2 bg-rose-50 border border-rose-300 text-rose-800 rounded-xl text-xs font-bold">
-        මුරපදය වැරදියි! (admin හෝ principal123)
+        මුරපදය වැරදියි!
       </div>
     </div>
 
@@ -897,7 +919,7 @@
           <span class="text-xl">👑</span>
           <div>
             <h2 class="text-sm sm:text-base font-black text-slate-900">විදුහල්පති නිල කළමනාකරණය</h2>
-            <p class="text-[10px] text-slate-500">නිවාඩු අනුමත කිරීම් හා තනතුරු සැකසුම්</p>
+            <p class="text-[10px] text-slate-500">නිවාඩු අනුමත කිරීම්, කාර්ය මණ්ඩල පැමිණීම්, ලේඛන ගණන හා තනතුරු සැකසුම්</p>
           </div>
         </div>
         <div class="flex items-center gap-1.5">
@@ -910,15 +932,15 @@
         </div>
       </div>
 
-      <!-- Pending List -->
+      <!-- 1. Pending Leave List -->
       <section>
         <div class="text-[11px] font-black text-slate-800 uppercase mb-2 flex items-center gap-1">
-          <span>⏳</span> අනුමැතිය අපේක්ෂිත ඉල්ලුම්:
+          <span>⏳</span> අනුමැතිය අපේක්ෂිත නිවාඩු ඉල්ලුම්:
         </div>
         <div id="pendingLeavesContainer" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1"></div>
       </section>
 
-      <!-- History -->
+      <!-- 2. Decided Leave History -->
       <section class="border-t border-slate-200 pt-3">
         <div class="text-[11px] font-black text-slate-700 uppercase mb-2 flex items-center justify-between">
           <span>📋 තීරණය කළ නිවාඩු ඉතිහාසය:</span>
@@ -927,7 +949,71 @@
         <div id="historyLeavesContainer" class="space-y-1.5 max-h-[200px] overflow-y-auto pr-1"></div>
       </section>
 
-      <!-- STAFF DESIGNATION / ROLE EDITING SECTION FOR PRINCIPAL -->
+      <!-- 3. MANUAL STAFF ATTENDANCE STATUS CHANGE BY PRINCIPAL -->
+      <section class="border-t border-slate-200 pt-4 mt-4">
+        <div class="text-[12px] font-black text-slate-800 uppercase mb-2 flex items-center gap-1.5">
+          <span>👨‍🏫</span> <span>කාර්ය මණ්ඩල පැමිණීමේ තත්ත්වය වෙනස් කිරීම (Manual Staff Status Update)</span>
+        </div>
+        <div class="bg-purple-50/70 border border-purple-200 p-3 sm:p-4 rounded-2xl space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">සාමාජිකයා තෝරන්න:</label>
+            <select id="adminEditStaffStatusSelect" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 font-bold text-xs text-slate-900 outline-none focus:ring-2 focus:ring-purple-600" onchange="loadStaffForStatusEdit()">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">පැමිණීමේ තත්ත්වය:</label>
+            <select id="adminNewStaffStatus" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-purple-600">
+              <option value="PRESENT">✅ පැමිණ ඇත (Present)</option>
+              <option value="LEAVE">📝 නිවාඩු (Leave)</option>
+              <option value="DUTY">💼 රාජකාරී (Duty)</option>
+              <option value="ABSENT">❌ නොපැමිණි (Absent)</option>
+              <option value="LEAVE_PENDING">⏳ Pending</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="saveAdminStaffStatusChange()" class="flex-1 bg-purple-900 hover:bg-purple-950 active:scale-95 text-white font-black py-2.5 rounded-xl text-xs shadow transition flex items-center justify-center gap-1.5">
+              <span>💾 තත්ත්වය යාවත්කාලීන කරන්න</span>
+            </button>
+            <button type="button" onclick="markAllStaffPresentByPrincipal()" class="bg-emerald-600 active:bg-emerald-700 text-white font-black py-2.5 px-3 rounded-xl text-xs shadow transition">
+              ✅ සියල්ලෝම පැමිණි
+            </button>
+            <button type="button" onclick="clearAllStaffAttendanceByPrincipal()" class="bg-slate-700 active:bg-slate-800 text-white font-black py-2.5 px-3 rounded-xl text-xs shadow transition">
+              ✖ හිස් කරන්න
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. EDIT STUDENT REGISTER BY PRINCIPAL -->
+      <section class="border-t border-slate-200 pt-4 mt-4">
+        <div class="text-[12px] font-black text-slate-800 uppercase mb-2 flex items-center gap-1.5">
+          <span>📊</span> <span>සිසුන්ගේ ලේඛනයේ ගණන වෙනස් කිරීම (Edit Student Register)</span>
+        </div>
+        <div class="bg-blue-50/70 border border-blue-200 p-3 sm:p-4 rounded-2xl space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">ශ්‍රේණිය / පන්තිය තෝරන්න:</label>
+            <select id="adminEditClassSelect" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 font-bold text-xs text-slate-900 outline-none focus:ring-2 focus:ring-blue-600" onchange="loadClassForRegisterEdit()">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">ලේඛනයේ පිරිමි සිසුන් ගණන (Boys Register):</label>
+              <input type="number" id="adminNewRegB" min="0" placeholder="0" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 mono-num">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">ලේඛනයේ ගැහැණු සිසුන් ගණන (Girls Register):</label>
+              <input type="number" id="adminNewRegG" min="0" placeholder="0" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 mono-num">
+            </div>
+          </div>
+          <button type="button" onclick="saveAdminStudentRegisterChange()" class="w-full bg-blue-900 hover:bg-blue-950 active:scale-95 text-white font-black py-2.5 rounded-xl text-xs shadow transition flex items-center justify-center gap-1.5">
+            <span>💾 ලේඛනයේ ගණන යාවත්කාලීන කර Firebase වෙත සුරකින්න</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 5. STAFF DESIGNATION / ROLE EDITING SECTION FOR PRINCIPAL -->
       <section class="border-t border-slate-200 pt-4 mt-4">
         <div class="text-[12px] font-black text-slate-800 uppercase mb-2 flex items-center gap-1.5">
           <span>⚙️</span> <span>ගුරුභවතුන්ගේ තනතුරු වෙනස් කිරීම (Edit Staff Roles)</span>
@@ -1022,39 +1108,39 @@
       { id: 1,  name: "කේ.එච්.දිලානි ප්‍රේමරත්න මිය", role: "විදුහල්පති", category: "PRINCIPAL", status: "PRESENT" },
       { id: 2,  name: "ඒ.එම්.කරුණාසේන මයා", role: "නි.වි(අ.ප.)", category: "VP", status: "PRESENT" },
       { id: 3,  name: "පීල්ලේවෙල නන්දාරාම හිමි", role: "නි.වි(අ.ස.)", category: "VP", status: "PRESENT" },
-      { id: 4,  name: "ඩී.එල්.එස්.පී.ලියනගේ මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 5,  name: "කේ.ඒ.සී.අඹන්පිටිය මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 6,  name: "ඒ.එම්.කපිල කුමාර මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 7,  name: "එම්.ඒ.ආර්.පසන් මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 8,  name: "එච්.එම්.ඩබ්.විජේසූරිය මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 9,  name: "ඩී.එම්.යූ.ටී.දිසානායක මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 10, name: "ආර්.එම්.කේ.නිශාන්ති මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 11, name: "ඩබ්.ඒ.අනුෂා දමයන්ති මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 12, name: "ඩී.එම්.එන්.ඒච්.දිසානායක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 13, name: "එච්.එම්.එල් සඳිපනි මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 14, name: "එල්.ඒස්.එන්.කේ.ප්‍රේමරත්න මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 15, name: "බී.සී.ටී.එන්.බුවනෙයක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 16, name: "බී.ජී.ඉනෝකා මල්කාන්ති මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 17, name: "පේ.එම්.සුමුදුනී ගීතිකා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 18, name: "එල්.පී.ජයවතී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 19, name: "ඩබ්.එම්.මානෙල් චාන්දනී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 20, name: "වයි.ශිරෝමි මැන්ඩිස් මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 21, name: "ජේ.එස්.ඩී.එම්.නෙළුම්තිකා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 22, name: "ඩී.එන්.අයි.එන්.එස්.පතිරත්න මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 23, name: "එස්.එම්.ඒ.චාන්දනී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 24, name: "ඩබ්.එම්.දමයන්ති සමන්තලතා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 25, name: "එච්.ටී.ප්‍රදීපිකා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 26, name: "ඩබ්.ඩී.සුනිලා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 27, name: "ඩී.එම්.රංජනී දිසානායක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 28, name: "ඩබ්.එස්.එස්.වීරක්කොඩි මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 29, name: "සී.ඩී.සමරකෝන් මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 30, name: "ඒ.එම්.එන්.පී. අධිකාරි මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 31, name: "ඩී.එස්.දීපා චාන්දනී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 32, name: "එම්.ඩී.කේ.සමන්තලතා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 33, name: "එම්.ඩී.මංගලා පියසීලි මෙය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 34, name: "ඩී.එම්.ආර්.එම්.දිසානායක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 35, name: "ඩී.එම්.ඒ.අයි. දිසානායක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
-      { id: 36, name: "ඩී. සුධම්ම සීලානී මෙ.වහන්සේ", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 4,  name: "එල්.ඒස්.එන්.කේ.ප්‍රේමරත්න මිය", role: "ස.නි.වි", category: "AVP", status: "PRESENT" },
+      { id: 5,  name: "කේ.ඒ.සී.අඹන්පිටිය මයා", role: "අංශ ප්‍රධාන", category: "SECTION_HEAD", status: "PRESENT" },
+      { id: 6,  name: "ආර්.එම්.කේ.නිශාන්ති මිය", role: "අංශ ප්‍රධාන", category: "SECTION_HEAD", status: "PRESENT" },
+      { id: 7,  name: "ඩී.එම්.රංජනී දිසානායක මිය", role: "අංශ ප්‍රධාන", category: "SECTION_HEAD", status: "PRESENT" },
+      { id: 8,  name: "ඩී. සුධම්ම සීලානී මෙ.වහන්සේ", role: "අංශ ප්‍රධාන", category: "SECTION_HEAD", status: "PRESENT" },
+      { id: 9,  name: "ඩී.එල්.එස්.පී.ලියනගේ මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 10, name: "ඒ.එම්.කපිල කුමාර මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 11, name: "එම්.ඒ.ආර්.පසන් මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 12, name: "එච්.එම්.ඩබ්.විජේසූරිය මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 13, name: "ඩී.එම්.යූ.ටී.දිසානායක මයා", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 14, name: "ඩබ්.ඒ.අනුෂා දමයන්ති මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 15, name: "ඩී.එම්.එන්.ඒච්.දිසානායක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 16, name: "එච්.එම්.එල් සඳිපනි මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 17, name: "බී.සී.ටී.එන්.බුවනෙයක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 18, name: "බී.ජී.ඉනෝකා මල්කාන්ති මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 19, name: "පේ.එම්.සුමුදුනී ගීතිකා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 20, name: "එල්.පී.ජයවතී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 21, name: "ඩබ්.එම්.මානෙල් චාන්දනී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 22, name: "වයි.ශිරෝමි මැන්ඩිස් මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 23, name: "ජේ.එස්.ඩී.එම්.නෙළුම්තිකා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 24, name: "ඩී.එන්.අයි.එන්.එස්.පතිරත්න මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 25, name: "එස්.එම්.ඒ.චාන්දනී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 26, name: "ඩබ්.එම්.දමයන්ති සමන්තලතා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 27, name: "එච්.ටී.ප්‍රදීපිකා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 28, name: "ඩබ්.ඩී.සුනිලා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 29, name: "ඩබ්.එස්.එස්.වීරක්කොඩි මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 30, name: "සී.ඩී.සමරකෝන් මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 31, name: "ඒ.එම්.එන්.පී. අධිකාරි මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 32, name: "ඩී.එස්.දීපා චාන්දනී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 33, name: "එම්.ඩී.කේ.සමන්තලතා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 34, name: "එම්.ඩී.මංගලා පියසීලි මෙය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 35, name: "ඩී.එම්.ආර්.එම්.දිසානායක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
+      { id: 36, name: "ඩී.එම්.ඒ.අයි. දිසානායක මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
       { id: 37, name: "ආර්.ඩබ්.කේ.එස්.ප්‍රියදර්ශනී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
       { id: 38, name: "ඒ.ඩබ්.වයි.සචින්තිකා මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
       { id: 39, name: "කේ.එම්.සී.යසාංජලී මිය", role: "ගුරු සේවය", category: "TEACHER", status: "PRESENT" },
@@ -1076,22 +1162,25 @@
     window.leaveApplications = [];
     let isAdminAuthenticated = false;
 
-    // Local Storage Fallback
     function initLocalState() {
-      const storedStudents = localStorage.getItem('local_school_students_2026');
+      const storedStudents = localStorage.getItem('local_school_students');
       window.activeData = storedStudents ? JSON.parse(storedStudents) : JSON.parse(JSON.stringify(officialRegisteredBaseline));
 
-      const storedStaff = localStorage.getItem('local_school_staff_2026');
-      window.activeStaffData = storedStaff ? JSON.parse(storedStaff) : JSON.parse(JSON.stringify(officialStaffBaselineOrdered));
+      const storedStaff = localStorage.getItem('local_school_staff');
+      if (storedStaff) {
+        window.activeStaffData = JSON.parse(storedStaff);
+      } else {
+        window.activeStaffData = JSON.parse(JSON.stringify(officialStaffBaselineOrdered));
+      }
 
-      const storedLeaves = localStorage.getItem('local_school_leaves_2026');
+      const storedLeaves = localStorage.getItem('local_school_leaves');
       window.leaveApplications = storedLeaves ? JSON.parse(storedLeaves) : [];
     }
 
     window.saveAllLocal = function() {
-      localStorage.setItem('local_school_students_2026', JSON.stringify(window.activeData));
-      localStorage.setItem('local_school_staff_2026', JSON.stringify(window.activeStaffData));
-      localStorage.setItem('local_school_leaves_2026', JSON.stringify(window.leaveApplications));
+      localStorage.setItem('local_school_students', JSON.stringify(window.activeData));
+      localStorage.setItem('local_school_staff', JSON.stringify(window.activeStaffData));
+      localStorage.setItem('local_school_leaves', JSON.stringify(window.leaveApplications));
 
       if (window.saveToFirebase) {
         window.saveToFirebase();
@@ -1114,7 +1203,6 @@
       }, 4000);
     }
 
-    // Tabs Switcher
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.getElementById(tabId).classList.remove('hidden');
@@ -1149,17 +1237,40 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 8:00 PM Auto Reset
-    function checkAutoResetEvening() {
+    function checkAnnualYearEndReset() {
       const now = new Date();
-      const currentHour = now.getHours();
-      const todayISO = now.toISOString().split('T')[0];
-      const lastResetDate = localStorage.getItem('local_school_last_reset');
+      const currentYear = now.getFullYear();
+      const lastResetYear = localStorage.getItem('local_school_active_year');
 
-      if (currentHour >= 20 && lastResetDate !== todayISO) {
-        performDailyAutoClear(todayISO);
+      if (!lastResetYear) {
+        localStorage.setItem('local_school_active_year', currentYear);
+        return;
       }
-      updateAutoResetCountdown();
+
+      if (parseInt(lastResetYear, 10) < currentYear) {
+        window.leaveApplications = [];
+        window.activeStaffData.forEach(s => {
+          s.status = "PRESENT";
+        });
+
+        ['primary', 'secondary'].forEach(sec => {
+          window.activeData[sec].forEach(row => {
+            row.attB = null;
+            row.attG = null;
+            row.marked = false;
+            row.teacher = "";
+            row.time = "";
+          });
+        });
+
+        localStorage.setItem('local_school_active_year', currentYear);
+        window.saveAllLocal();
+        renderAllTables();
+        renderStaffTable();
+        renderStaffLeaveSummaryTable();
+        updatePendingBadge();
+        showToast(`${currentYear} නව වසර සඳහා දත්ත අලුතින් සකස් විය!`, "🎆");
+      }
     }
 
     function performDailyAutoClear(todayISO) {
@@ -1173,18 +1284,25 @@
         });
       });
 
-      window.activeStaffData.forEach(staff => {
-        staff.status = "PRESENT";
-      });
-
       localStorage.setItem('local_school_last_reset', todayISO);
       window.saveAllLocal();
       renderAllTables();
       populateTeacherClassSelect();
       onTeacherClassChanged();
-      renderStaffTable();
-      updatePendingBadge();
-      showToast("8:00 PM: පැමිණීම් Reset විය!", "⏰");
+      showToast("8:00 PM: ශිෂ්‍ය දෛනික පැමිණීම් Reset විය!", "⏰");
+    }
+
+    function checkAutoResetEvening() {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const todayISO = now.toISOString().split('T')[0];
+      const lastResetDate = localStorage.getItem('local_school_last_reset');
+
+      if (currentHour >= 20 && lastResetDate !== todayISO) {
+        performDailyAutoClear(todayISO);
+      }
+      updateAutoResetCountdown();
+      checkAnnualYearEndReset();
     }
 
     function updateAutoResetCountdown() {
@@ -1204,7 +1322,6 @@
       }
     }
 
-    // Student Board Rendering
     function renderTableRows(sectionKey, tbodyId) {
       const tbody = document.getElementById(tbodyId);
       tbody.innerHTML = "";
@@ -1318,7 +1435,6 @@
       document.getElementById('sec_tot_att_g').innerText = sec_has_att ? sec_att_g : '-';
       document.getElementById('sec_tot_att_all').innerText = sec_has_att ? sec_att_tot : '-';
 
-      // Sectional Matrix Breakdown
       let b_6_9 = 0, g_6_9 = 0, att_b_6_9 = 0, att_g_6_9 = 0, has_6_9 = false;
       let b_10_11 = 0, g_10_11 = 0, att_b_10_11 = 0, att_g_10_11 = 0, has_10_11 = false;
       let b_12_13 = 0, g_12_13 = 0, att_b_12_13 = 0, att_g_12_13 = 0, has_12_13 = false;
@@ -1414,7 +1530,6 @@
       calculateTotalsAndBreakdowns();
     };
 
-    // Teacher Panel
     window.populateTeacherClassSelect = function() {
       const select = document.getElementById('teacherClassSelect');
       const currentSelected = select.value;
@@ -1511,7 +1626,7 @@
       current.item.regB = parseInt(document.getElementById('tp_regB').value, 10) || 0;
       current.item.regG = parseInt(document.getElementById('tp_regG').value, 10) || 0;
       window.saveAllLocal();
-      window.renderAllTables();
+      renderAllTables();
       calculateTeacherLivePreview();
     }
 
@@ -1535,9 +1650,9 @@
       current.item.marked = true;
 
       window.saveAllLocal();
-      window.renderAllTables();
-      window.populateTeacherClassSelect();
-      window.onTeacherClassChanged();
+      renderAllTables();
+      populateTeacherClassSelect();
+      onTeacherClassChanged();
       showToast(`ශ්‍රේණිය ${current.grade} පැමිණීම සුරකින ලදී!`, "💾");
     }
 
@@ -1556,13 +1671,12 @@
       document.getElementById('tp_teacherName').value = '';
 
       window.saveAllLocal();
-      window.renderAllTables();
-      window.populateTeacherClassSelect();
-      window.onTeacherClassChanged();
+      renderAllTables();
+      populateTeacherClassSelect();
+      onTeacherClassChanged();
       showToast(`ශ්‍රේණිය ${current.grade} හිස් කරන ලදී.`, "🗑️");
     }
 
-    // Staff Rendering with Support for AVP and SECTION_HEAD
     function getCategoryBadge(cat, role) {
       if (cat === "PRINCIPAL") return `<span class="px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-900 border border-rose-300">👑 ${role}</span>`;
       if (cat === "VP") return `<span class="px-1.5 py-0.5 rounded text-[10px] font-black bg-purple-100 text-purple-900 border border-purple-300">⭐ ${role}</span>`;
@@ -1573,6 +1687,24 @@
       return `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-800 border border-slate-300">🔧 ${role}</span>`;
     }
 
+    // Read-only status badge generator for Staff table
+    function getStaffStatusBadge(status) {
+      if (status === "LEAVE_PENDING") {
+        return `<span class="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[10.5px] font-black px-2.5 py-1 rounded-lg animate-leave-pulse">⏳ Pending නිවාඩු</span>`;
+      }
+      if (status === "LEAVE") {
+        return `<span class="inline-flex items-center gap-1 bg-rose-100 text-rose-900 border border-rose-300 text-[10.5px] font-black px-2.5 py-1 rounded-lg">📝 නිවාඩු (Leave)</span>`;
+      }
+      if (status === "DUTY") {
+        return `<span class="inline-flex items-center gap-1 bg-blue-100 text-blue-900 border border-blue-300 text-[10.5px] font-black px-2.5 py-1 rounded-lg">💼 රාජකාරී (Duty)</span>`;
+      }
+      if (status === "ABSENT") {
+        return `<span class="inline-flex items-center gap-1 bg-rose-200 text-rose-950 border border-rose-400 text-[10.5px] font-black px-2.5 py-1 rounded-lg">❌ නොපැමිණි</span>`;
+      }
+      return `<span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10.5px] font-black px-2.5 py-1 rounded-lg">✅ පැමිණ ඇත</span>`;
+    }
+
+    // Render Staff Table (Strictly Read-Only, No direct editing)
     window.renderStaffTable = function() {
       const tbody = document.getElementById('staffTableBody');
       tbody.innerHTML = "";
@@ -1593,7 +1725,7 @@
       let grandPresent = 0;
 
       window.activeStaffData.forEach((staff) => {
-        const isPresent = (staff.status === "PRESENT" || staff.status === "DUTY");
+        const isPresent = (staff.status === "PRESENT" || staff.status === "DUTY" || !staff.status);
         const isLeave = (staff.status === "LEAVE" || staff.status === "LEAVE_PENDING");
         const isAbsent = (staff.status === "ABSENT");
 
@@ -1615,7 +1747,7 @@
         if (!matchesCategory || !matchesSearch) return;
 
         let rowBg = "bg-white";
-        if (staff.status === "PRESENT") rowBg = "bg-emerald-50/70";
+        if (staff.status === "PRESENT" || !staff.status) rowBg = "bg-emerald-50/70";
         else if (staff.status === "LEAVE_PENDING") rowBg = "bg-amber-100/80 animate-leave-pulse";
         else if (staff.status === "LEAVE") rowBg = "bg-yellow-50";
         else if (staff.status === "DUTY") rowBg = "bg-blue-50";
@@ -1634,13 +1766,7 @@
           </td>
           <td class="py-2.5 px-2">${getCategoryBadge(staff.category, staff.role)}</td>
           <td class="text-center py-2 px-2">
-            <select class="text-[11px] font-bold rounded-lg p-1.5 border border-slate-300 bg-white w-full cursor-pointer outline-none" onchange="updateStaffStatus(${staff.id}, this.value)">
-              <option value="PRESENT" ${staff.status === 'PRESENT' ? 'selected' : ''}>✅ පැමිණ ඇත (Present)</option>
-              <option value="LEAVE_PENDING" ${staff.status === 'LEAVE_PENDING' ? 'selected' : ''}>⏳ Pending</option>
-              <option value="LEAVE" ${staff.status === 'LEAVE' ? 'selected' : ''}>📝 නිවාඩු (Leave)</option>
-              <option value="DUTY" ${staff.status === 'DUTY' ? 'selected' : ''}>💼 රාජකාරී (Duty)</option>
-              <option value="ABSENT" ${staff.status === 'ABSENT' ? 'selected' : ''}>❌ නොපැමිණි (Absent)</option>
-            </select>
+            ${getStaffStatusBadge(staff.status)}
           </td>
         `;
         tbody.appendChild(tr);
@@ -1668,36 +1794,10 @@
       const barElem = document.getElementById(barId);
 
       if (statElem) statElem.innerText = `${stats.present}/${stats.total}`;
-      if (subElem) subElem.innerText = `පැ: ${stats.present} | නි: ${stats.leave}`;
+      if (subElem) subElem.innerText = `පැ:${stats.present} නි:${stats.leave}`;
       if (barElem && stats.total > 0) {
         barElem.style.width = `${(stats.present / stats.total) * 100}%`;
       }
-    }
-
-    function markAllStaffPresent() {
-      window.activeStaffData.forEach(s => {
-        if (s.status !== "LEAVE" && s.status !== "LEAVE_PENDING") s.status = "PRESENT";
-      });
-      window.saveAllLocal();
-      renderStaffTable();
-      showToast("සියලු සාමාජිකයින් පැමිණි ලෙස සලකුණු විය!", "✅");
-    }
-
-    function clearAllStaffAttendance() {
-      if (confirm("සියලු කාර්ය මණ්ඩල පැමිණීම හිස් කිරීමට අවශ්‍යද?")) {
-        window.activeStaffData.forEach(s => s.status = "");
-        window.saveAllLocal();
-        renderStaffTable();
-        showToast("හිස් කරන ලදී.", "🗑️");
-      }
-    }
-
-    function updateStaffStatus(id, newStatus) {
-      const staff = window.activeStaffData.find(s => s.id === id);
-      if (!staff) return;
-      staff.status = newStatus;
-      window.saveAllLocal();
-      renderStaffTable();
     }
 
     function filterStaffTable() {
@@ -1732,6 +1832,36 @@
       if (prev) select.value = prev;
     };
 
+    function handleLeaveTypeSelectionChange() {
+      const type = document.getElementById('leaveTypeSelect').value;
+      const endPicker = document.getElementById('leaveEndDateInput');
+      const startPicker = document.getElementById('leaveStartDateInput');
+
+      if (type === "HALF_DAY") {
+        if (startPicker.value) endPicker.value = startPicker.value;
+        endPicker.disabled = true;
+      } else {
+        endPicker.disabled = false;
+      }
+    }
+
+    function syncLeaveEndDatePicker() {
+      const startPicker = document.getElementById('leaveStartDateInput');
+      const endPicker = document.getElementById('leaveEndDateInput');
+      if (!endPicker.value || endPicker.value < startPicker.value) {
+        endPicker.value = startPicker.value;
+      }
+      handleLeaveTypeSelectionChange();
+    }
+
+    function getDaysDiffInclusive(startStr, endStr) {
+      const d1 = new Date(startStr);
+      const d2 = new Date(endStr);
+      const diffTime = d2.getTime() - d1.getTime();
+      if (diffTime < 0) return 1;
+      return Math.round(diffTime / (1000 * 3600 * 24)) + 1;
+    }
+
     window.renderStaffLeaveSummaryTable = function() {
       const tbody = document.getElementById('leaveSummaryTableBody');
       if (!tbody) return;
@@ -1752,13 +1882,15 @@
         let dutyCount = 0;
 
         staffApprovedLeaves.forEach(l => {
-          if (l.leaveType === "CASUAL") casualCount++;
-          else if (l.leaveType === "MEDICAL") medicalCount++;
-          else if (l.leaveType === "HALF_DAY") halfDayCount++;
-          else if (l.leaveType === "DUTY") dutyCount++;
+          const days = parseFloat(l.daysCount) || 1;
+          if (l.leaveType === "CASUAL") casualCount += days;
+          else if (l.leaveType === "MEDICAL") medicalCount += days;
+          else if (l.leaveType === "HALF_DAY") halfDayCount += days;
+          else if (l.leaveType === "DUTY") dutyCount += days;
         });
 
-        const personalTotal = casualCount + medicalCount + halfDayCount;
+        // Half day counts as 0.5 (1/2) in total personal
+        const personalTotal = casualCount + medicalCount + (halfDayCount * 0.5);
 
         totalCasual += casualCount;
         totalMedical += medicalCount;
@@ -1768,6 +1900,7 @@
 
         const isCasualMaxed = casualCount >= 20;
         const isMedicalMaxed = medicalCount >= 21;
+        const isOverTen = personalTotal > 10;
 
         const tr = document.createElement('tr');
         tr.className = idx % 2 === 1 ? "bg-slate-50/70 hover:bg-amber-50/50" : "bg-white hover:bg-amber-50/50";
@@ -1790,11 +1923,13 @@
           </td>
 
           <td class="mono-num font-black ${halfDayCount > 0 ? 'text-purple-800 bg-purple-50 font-bold' : 'text-slate-300'}">
-            ${halfDayCount}
+            ${halfDayCount} ${halfDayCount > 0 ? `<span class="text-[9px] text-purple-600 block">(=${(halfDayCount * 0.5)})</span>` : ''}
           </td>
 
-          <td class="mono-num font-black text-slate-900 bg-slate-100/90 ${personalTotal > 0 ? 'text-amber-950 font-extrabold' : 'text-slate-400'}">
+          <!-- Personal Total (Highlights Red when > 10) -->
+          <td class="mono-num font-black transition-colors ${isOverTen ? 'bg-rose-600 text-white font-extrabold shadow-inner text-sm' : (personalTotal > 0 ? 'bg-amber-100/90 text-amber-950 font-extrabold' : 'bg-slate-100/90 text-slate-400')}">
             ${personalTotal}
+            ${isOverTen ? '<span class="block text-[8px] font-black uppercase text-amber-200">Alert > 10</span>' : ''}
           </td>
 
           <td class="mono-num font-black bg-blue-50/80 ${dutyCount > 0 ? 'text-blue-900 font-extrabold' : 'text-slate-400'}">
@@ -1816,10 +1951,17 @@
       e.preventDefault();
       const staffIdVal = document.getElementById('leaveStaffSelect').value;
       const leaveType = document.getElementById('leaveTypeSelect').value;
-      const leaveDate = document.getElementById('leaveDateInput').value;
+      const startDate = document.getElementById('leaveStartDateInput').value;
+      let endDate = document.getElementById('leaveEndDateInput').value;
       const leaveReason = document.getElementById('leaveReasonInput').value.trim();
 
-      if (!staffIdVal || !leaveType || !leaveDate) return;
+      if (!staffIdVal || !leaveType || !startDate) return;
+
+      if (!endDate || endDate < startDate || leaveType === "HALF_DAY") {
+        endDate = startDate;
+      }
+
+      const daysRequested = (leaveType === "HALF_DAY") ? 1 : getDaysDiffInclusive(startDate, endDate);
 
       const staff = window.activeStaffData.find(s => s.id === parseInt(staffIdVal, 10));
       if (!staff) return;
@@ -1827,26 +1969,29 @@
       const existingApproved = window.leaveApplications.filter(l => l.staffId === staff.id && l.status === "APPROVED");
 
       if (leaveType === "CASUAL") {
-        const casualCount = existingApproved.filter(l => l.leaveType === "CASUAL").length;
-        if (casualCount >= 20) {
-          alert(`සීමාව ඉක්මවා ඇත! ${staff.name} ගුරුභවතා දැනටමත් වසරේ උපරිම අනියම් නිවාඩු (Casual Leaves 20) ලබාගෙන ඇත.`);
+        let casualTotal = 0;
+        existingApproved.filter(l => l.leaveType === "CASUAL").forEach(l => casualTotal += (parseFloat(l.daysCount) || 1));
+        if (casualTotal + daysRequested > 20) {
+          alert(`සීමාව ඉක්මවා ඇත! ${staff.name} ගුරුභවතාට ඉතිරිව ඇත්තේ Casual නිවාඩු ${Math.max(0, 20 - casualTotal)} ක් පමණි.`);
           showToast("Casual Leave උපරිම සීමාව (20) ඉක්මවා ඇත!", "⚠️");
           return;
         }
       }
 
       if (leaveType === "MEDICAL") {
-        const medicalCount = existingApproved.filter(l => l.leaveType === "MEDICAL").length;
-        if (medicalCount >= 21) {
-          alert(`සීමාව ඉක්මවා ඇත! ${staff.name} ගුරුභවතා දැනටමත් උපරිම අසනීප නිවාඩු (Medical Leaves 21) ලබාගෙන ඇත.`);
+        let medTotal = 0;
+        existingApproved.filter(l => l.leaveType === "MEDICAL").forEach(l => medTotal += (parseFloat(l.daysCount) || 1));
+        if (medTotal + daysRequested > 21) {
+          alert(`සීමාව ඉක්මවා ඇත! ${staff.name} ගුරුභවතාට ඉතිරිව ඇත්තේ Medical නිවාඩු ${Math.max(0, 21 - medTotal)} ක් පමණි.`);
           showToast("Medical Leave උපරිම සීමාව (21) ඉක්මවා ඇත!", "⚠️");
           return;
         }
       }
 
       if (leaveType === "HALF_DAY") {
-        const targetYearMonth = leaveDate.substring(0, 7);
-        const monthlyHalfDays = existingApproved.filter(l => l.leaveType === "HALF_DAY" && l.date.startsWith(targetYearMonth)).length;
+        const targetYearMonth = startDate.substring(0, 7);
+        let monthlyHalfDays = 0;
+        existingApproved.filter(l => l.leaveType === "HALF_DAY" && l.date.startsWith(targetYearMonth)).forEach(l => monthlyHalfDays += (parseFloat(l.daysCount) || 1));
 
         if (monthlyHalfDays >= 2) {
           alert(`සීමාව ඉක්මවා ඇත! ${staff.name} ගුරුභවතා ${targetYearMonth} මාසය තුළ දැනටමත් උපරිම අර්ධ දින නිවාඩු (Half Days 2) ලබාගෙන ඇත.`);
@@ -1855,13 +2000,18 @@
         }
       }
 
+      const dateLabel = (startDate === endDate) ? startDate : `${startDate} සිට ${endDate} (${daysRequested} days)`;
+
       const newLeave = {
         id: Date.now(),
         staffId: staff.id,
         staffName: staff.name,
         role: staff.role,
         leaveType: leaveType,
-        date: leaveDate,
+        date: dateLabel,
+        startDate: startDate,
+        endDate: endDate,
+        daysCount: daysRequested,
         reason: leaveReason,
         submittedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: "PENDING",
@@ -1874,11 +2024,12 @@
 
       window.saveAllLocal();
       document.getElementById('leaveApplicationForm').reset();
+      document.getElementById('leaveEndDateInput').disabled = false;
 
       updatePendingBadge();
       renderStaffTable();
       renderStaffLeaveSummaryTable();
-      showToast(`${staff.name} ගේ අයදුම්පත යොමු විය!`, "📨");
+      showToast(`${staff.name} ගේ අයදුම්පත (${daysRequested} days) යොමු විය!`, "📨");
     }
 
     window.updatePendingBadge = function() {
@@ -1902,7 +2053,6 @@
       if (pendingCountText) pendingCountText.innerText = pendingList.length;
     };
 
-    // Principal Admin
     function handleAdminLogin(e) {
       e.preventDefault();
       const val = document.getElementById('adminPasswordInput').value.trim();
@@ -1935,6 +2085,8 @@
         dashScreen.classList.remove('hidden');
         renderAdminApprovalDashboard();
         populateAdminStaffEditDropdown();
+        populateAdminClassRegisterSelect();
+        populateAdminStaffStatusDropdown();
       }
     }
 
@@ -1958,7 +2110,7 @@
           div.innerHTML = `
             <div class="flex justify-between items-center mb-1.5">
               <span class="font-black text-slate-900 text-xs">${item.staffId}. ${item.staffName}</span>
-              <span class="text-[9.5px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full">${item.leaveType}</span>
+              <span class="text-[9.5px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full">${item.leaveType} (${item.daysCount || 1} d)</span>
             </div>
             <p class="text-[11px] text-slate-700 bg-white p-2 rounded-lg border border-slate-200 mb-2">
               <b>දිනය:</b> ${item.date} | <b>හේතුව:</b> "${item.reason}"
@@ -1980,7 +2132,7 @@
           const d = document.createElement("div");
           d.className = `p-2 rounded-lg border flex justify-between items-center text-[11px] ${isApproved ? 'bg-emerald-50 border-emerald-300' : 'bg-rose-50 border-rose-300'}`;
           d.innerHTML = `
-            <span class="truncate max-w-[200px]"><b>${item.staffName}</b> - ${item.leaveType}</span>
+            <span class="truncate max-w-[200px]"><b>${item.staffName}</b> - ${item.leaveType} (${item.daysCount || 1} d)</span>
             <span class="font-black ${isApproved ? 'text-emerald-800' : 'text-rose-800'}">${isApproved ? '✅ අනුමතයි' : '❌ ප්‍රතික්ෂේපයි'}</span>
           `;
           historyContainer.appendChild(d);
@@ -2033,6 +2185,131 @@
       }
     }
 
+    // Principal Staff Status Management Functions
+    window.populateAdminStaffStatusDropdown = function() {
+      const sel = document.getElementById('adminEditStaffStatusSelect');
+      if (!sel) return;
+      sel.innerHTML = '<option value="" disabled selected>-- සාමාජිකයා තෝරන්න --</option>';
+      window.activeStaffData.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.innerText = `${s.id}. ${s.name} (${s.role})`;
+        sel.appendChild(opt);
+      });
+    };
+
+    window.loadStaffForStatusEdit = function() {
+      const staffId = parseInt(document.getElementById('adminEditStaffStatusSelect').value, 10);
+      const staff = window.activeStaffData.find(s => s.id === staffId);
+      if (!staff) return;
+      document.getElementById('adminNewStaffStatus').value = staff.status || "PRESENT";
+    };
+
+    window.saveAdminStaffStatusChange = function() {
+      const staffId = parseInt(document.getElementById('adminEditStaffStatusSelect').value, 10);
+      const newStatus = document.getElementById('adminNewStaffStatus').value;
+
+      if (!staffId) {
+        showToast("කරුණාකර සාමාජිකයෙකු තෝරන්න.", "⚠️");
+        return;
+      }
+
+      const staff = window.activeStaffData.find(s => s.id === staffId);
+      if (staff) {
+        staff.status = newStatus;
+        window.saveAllLocal();
+        renderStaffTable();
+        showToast(`${staff.name} ගේ තත්ත්වය යාවත්කාලීන විය!`, "✅");
+      }
+    };
+
+    function markAllStaffPresentByPrincipal() {
+      window.activeStaffData.forEach(s => {
+        if (s.status !== "LEAVE" && s.status !== "LEAVE_PENDING") s.status = "PRESENT";
+      });
+      window.saveAllLocal();
+      renderStaffTable();
+      showToast("සියලු සාමාජිකයින් පැමිණි ලෙස සලකුණු විය!", "✅");
+    }
+
+    function clearAllStaffAttendanceByPrincipal() {
+      if (confirm("සියලු කාර්ය මණ්ඩල පැමිණීම හිස් කිරීමට අවශ්‍යද?")) {
+        window.activeStaffData.forEach(s => s.status = "");
+        window.saveAllLocal();
+        renderStaffTable();
+        showToast("හිස් කරන ලදී.", "🗑️");
+      }
+    }
+
+    // Principal Register Edit Functions
+    window.populateAdminClassRegisterSelect = function() {
+      const sel = document.getElementById('adminEditClassSelect');
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = '<option value="" disabled selected>-- පන්තිය තෝරන්න --</option>';
+
+      const priGroup = document.createElement("optgroup");
+      priGroup.label = "── ප්‍රාථමික (1 - 5) ──";
+      window.activeData.primary.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = `primary|${c.grade}`;
+        opt.innerText = `ශ්‍රේණිය ${c.grade}`;
+        priGroup.appendChild(opt);
+      });
+      sel.appendChild(priGroup);
+
+      const secGroup = document.createElement("optgroup");
+      secGroup.label = "── ද්විතීක (6 - 13) ──";
+      window.activeData.secondary.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = `secondary|${c.grade}`;
+        opt.innerText = `ශ්‍රේණිය ${c.grade}`;
+        secGroup.appendChild(opt);
+      });
+      sel.appendChild(secGroup);
+
+      if (prev) sel.value = prev;
+    };
+
+    window.loadClassForRegisterEdit = function() {
+      const selVal = document.getElementById('adminEditClassSelect').value;
+      if (!selVal) return;
+      const [sec, grade] = selVal.split('|');
+      const item = window.activeData[sec].find(x => x.grade === grade);
+      if (!item) return;
+
+      document.getElementById('adminNewRegB').value = item.regB;
+      document.getElementById('adminNewRegG').value = item.regG;
+    };
+
+    window.saveAdminStudentRegisterChange = function() {
+      const selVal = document.getElementById('adminEditClassSelect').value;
+      if (!selVal) {
+        showToast("කරුණාකර පන්තියක් තෝරන්න.", "⚠️");
+        return;
+      }
+      const [sec, grade] = selVal.split('|');
+      const item = window.activeData[sec].find(x => x.grade === grade);
+      if (!item) return;
+
+      const newB = parseInt(document.getElementById('adminNewRegB').value, 10);
+      const newG = parseInt(document.getElementById('adminNewRegG').value, 10);
+
+      if (isNaN(newB) || isNaN(newG) || newB < 0 || newG < 0) {
+        showToast("වලංගු සිසුන් ගණනක් ඇතුළත් කරන්න.", "⚠️");
+        return;
+      }
+
+      item.regB = newB;
+      item.regG = newG;
+
+      window.saveAllLocal();
+      renderAllTables();
+      populateTeacherClassSelect();
+      onTeacherClassChanged();
+      showToast(`ශ්‍රේණිය ${grade} ලේඛනයේ ගණන යාවත්කාලීන විය!`, "✅");
+    };
+
     // Role / Designation Edit Implementation
     window.populateAdminStaffEditDropdown = function() {
       const sel = document.getElementById('adminEditStaffSelect');
@@ -2070,16 +2347,16 @@
         staff.category = newCategory;
         
         window.saveAllLocal();
-        window.renderStaffTable();
-        window.populateLeaveStaffDropdown();
-        window.renderStaffLeaveSummaryTable();
-        window.populateAdminStaffEditDropdown();
+        renderStaffTable();
+        populateLeaveStaffDropdown();
+        renderStaffLeaveSummaryTable();
+        populateAdminStaffEditDropdown();
+        populateAdminStaffStatusDropdown();
         
         showToast(`${staff.name} ගේ තනතුර සාර්ථකව වෙනස් විය!`, "✅");
       }
     };
 
-    // Sample Data Loader
     function loadOfficialSampleData() {
       if (!confirm("නියැදි දත්ත පූරණය කිරීමට අවශ්‍යද?")) return;
       ['primary', 'secondary'].forEach(sec => {
@@ -2105,10 +2382,10 @@
         const formatted = `${parts[0]}.${parts[1]}.${parts[2]}`;
         document.getElementById('whiteboardHeaderDate').innerText = formatted;
         document.getElementById('yearDisplay').innerText = parts[0];
+        document.getElementById('headerYearBadge').innerText = parts[0];
       }
     }
 
-    // Window Init
     window.onload = function() {
       initLocalState();
 
@@ -2122,6 +2399,7 @@
       if (datePicker) datePicker.value = todayISO;
 
       document.getElementById('yearDisplay').innerText = yyyy;
+      document.getElementById('headerYearBadge').innerText = yyyy;
       document.getElementById('whiteboardHeaderDate').innerText = `${yyyy}.${mm}.${dd}`;
 
       checkAutoResetEvening();
