@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>පාසල් දෛනික පැමිණීම් හා නිවාඩු කළමනාකරණ පද්ධතිය - 2026</title>
+  
+  <!-- PWA Meta Tags & Manifest -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#1e3a8a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="School Attendance">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2997/2997295.png">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Noto Sans Sinhala & Plus Jakarta Sans & JetBrains Mono -->
@@ -12,6 +22,9 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700;800&family=Noto+Sans+Sinhala:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
+    html {
+      scroll-behavior: smooth;
+    }
     body {
       font-family: 'Noto Sans Sinhala', 'Plus Jakarta Sans', system-ui, sans-serif;
       background: radial-gradient(circle at 15% 15%, #f8fafc 0%, #e2e8f0 100%);
@@ -36,26 +49,26 @@
     }
 
     .whiteboard-surface {
-      border: 3px solid #1e3a8a;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px -10px rgba(30, 58, 138, 0.15);
+      border: 3.5px solid #0f172a;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.2);
       background: #ffffff;
     }
 
     .board-grid {
       border-collapse: collapse;
       width: 100%;
-      min-width: 580px;
     }
     .board-grid th, .board-grid td {
       border: 1.5px solid #0f172a;
       text-align: center;
-      padding: 6px 4px;
-      font-size: 11.5px;
-      font-weight: 600;
+      padding: 4px 2px;
+      font-size: 11px;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
     }
     .board-grid th {
-      background-color: #f1f5f9;
+      background-color: #f8fafc;
       color: #0f172a;
     }
 
@@ -83,11 +96,11 @@
       border: none;
       outline: none;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12.5px;
+      font-weight: 800;
       color: #0f172a;
-      padding: 4px 0;
-      min-height: 32px;
+      padding: 2px 0;
+      min-height: 26px;
       transition: all 0.15s ease;
     }
     .cell-input:focus {
@@ -95,15 +108,20 @@
       border-radius: 4px;
     }
     .cell-input.att-val {
-      color: #1d4ed8;
+      color: #1e3a8a;
       font-weight: 800;
     }
 
     .row-completed {
-      background-color: #ecfdf5 !important;
+      background-color: #f0fdf4 !important;
     }
     .row-zebra {
       background-color: #f8fafc;
+    }
+
+    .row-focus-highlight {
+      background-color: #fef08a !important;
+      box-shadow: inset 0 0 0 2px #d97706;
     }
 
     .tab-btn-base {
@@ -139,22 +157,6 @@
       box-shadow: 0 6px 16px -2px rgba(225, 29, 72, 0.45);
     }
 
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    @keyframes pulseAlert {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.85; transform: scale(1.02); }
-    }
-    .animate-leave-pulse {
-      animation: pulseAlert 2s infinite ease-in-out;
-    }
-
     .position-chip {
       min-width: 135px;
       flex: 1 1 0%;
@@ -167,6 +169,22 @@
       flex-direction: column;
       justify-content: space-between;
       transition: transform 0.15s ease;
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #f59e0b;
+      border-radius: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #d97706;
     }
 
     @media print {
@@ -233,8 +251,8 @@
           localStorage.setItem('local_school_leaves', JSON.stringify(window.leaveApplications));
 
           window.renderAllTables();
-          window.populateTeacherClassSelect();
-          window.onTeacherClassChanged();
+          window.renderTopClassButtons();
+          window.onTeacherClassChanged(false);
           window.renderStaffTable();
           window.populateLeaveStaffDropdown();
           window.renderStaffLeaveSummaryTable();
@@ -256,15 +274,29 @@
 </head>
 <body class="p-2 sm:p-4 lg:p-6 pb-24 md:pb-6 min-h-screen text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
 
-  <!-- ================= NOTIFICATION TOAST ================= -->
+  <!-- PWA Install Banner -->
+  <div id="pwaInstallBanner" class="hidden fixed bottom-20 md:bottom-5 left-4 right-4 max-w-md mx-auto z-50 glass-card-dark p-3.5 rounded-2xl border-2 border-amber-400 shadow-2xl flex items-center justify-between gap-3 text-white">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center text-lg font-black shrink-0">📲</div>
+      <div>
+        <div class="text-xs font-black text-amber-300">App එකක් ලෙස Install කරන්න</div>
+        <div class="text-[10px] text-slate-300">Home screen එකට එක්කර පහසුවෙන් භාවිත කරන්න</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button onclick="installPWAApp()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[11px] px-3 py-1.5 rounded-xl shadow">Install</button>
+      <button onclick="dismissPWABanner()" class="bg-slate-800 text-slate-300 text-xs px-2 py-1.5 rounded-xl">✕</button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION TOAST -->
   <div id="toastNotify" class="fixed top-3 left-3 right-3 sm:left-auto sm:right-5 z-50 flex items-center gap-3 bg-slate-900/95 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 max-w-md transform translate-y-[-140%] opacity-0 pointer-events-none transition-all duration-300">
     <span id="toastIcon" class="text-xl">✨</span>
     <div class="flex-1 text-xs sm:text-sm font-semibold leading-snug" id="toastMessage">දත්ත සුරකින ලදී</div>
   </div>
 
-  <!-- ================= MAIN HEADER & CONTROLS ================= -->
+  <!-- MAIN HEADER & CONTROLS -->
   <header class="max-w-[1520px] mx-auto mb-3 glass-card p-3 sm:p-5 rounded-2xl border border-slate-200 no-print">
-    
     <div class="flex flex-col items-center justify-center text-center pb-3 border-b border-slate-200 gap-2">
       <div class="flex items-center justify-center gap-2.5">
         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-blue-900 via-indigo-900 to-blue-700 flex items-center justify-center text-white text-xl sm:text-2xl shadow-md shrink-0">
@@ -331,95 +363,121 @@
 
   <!-- ================= TAB 1: STUDENT ATTENDANCE ================= -->
   <main id="studentsTab" class="tab-content block space-y-3 sm:space-y-4">
+    <!-- Top KPI Highlights -->
     <section class="max-w-[1520px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 no-print">
-      <div class="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-center justify-between border-l-4 border-l-slate-800">
+      <div class="glass-card p-3 rounded-xl flex items-center justify-between border-l-4 border-l-slate-800">
         <div>
-          <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase">මුළු ලේඛනය</span>
+          <span class="text-[10px] font-bold text-slate-500 uppercase">මුළු ලේඛනය</span>
           <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="kpi_total_reg" class="text-xl sm:text-3xl font-black mono-num text-slate-900">0</span>
+            <span id="kpi_total_reg" class="text-xl sm:text-2xl font-black mono-num text-slate-900">0</span>
             <span class="text-[10px] text-slate-400">සිසුන්</span>
           </div>
         </div>
-        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-100 flex items-center justify-center text-base sm:text-xl">📚</div>
+        <div class="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-lg">📚</div>
       </div>
 
-      <div class="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-center justify-between border-l-4 border-l-blue-600">
+      <div class="glass-card p-3 rounded-xl flex items-center justify-between border-l-4 border-l-blue-600">
         <div>
-          <span class="text-[10px] sm:text-[11px] font-bold text-blue-700 uppercase">අද පැමිණි</span>
+          <span class="text-[10px] font-bold text-blue-700 uppercase">අද පැමිණි</span>
           <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="kpi_total_att" class="text-xl sm:text-3xl font-black mono-num text-blue-900">-</span>
+            <span id="kpi_total_att" class="text-xl sm:text-2xl font-black mono-num text-blue-900">-</span>
             <span class="text-[10px] text-blue-600">පැමිණි</span>
           </div>
         </div>
-        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-50 flex items-center justify-center text-base sm:text-xl text-blue-700">🎒</div>
+        <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-lg text-blue-700">🎒</div>
       </div>
 
-      <div class="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-center justify-between border-l-4 border-l-emerald-500">
+      <div class="glass-card p-3 rounded-xl flex items-center justify-between border-l-4 border-l-emerald-500">
         <div>
-          <span class="text-[10px] sm:text-[11px] font-bold text-emerald-700 uppercase">ප්‍රතිශතය</span>
+          <span class="text-[10px] font-bold text-emerald-700 uppercase">ප්‍රතිශතය</span>
           <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="kpi_percentage" class="text-xl sm:text-3xl font-black mono-num text-emerald-700">0.0%</span>
+            <span id="kpi_percentage" class="text-xl sm:text-2xl font-black mono-num text-emerald-700">0.0%</span>
           </div>
         </div>
-        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-base sm:text-xl text-emerald-600">📈</div>
+        <div class="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-lg text-emerald-600">📈</div>
       </div>
 
-      <div class="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-center justify-between border-l-4 border-l-amber-500">
+      <div class="glass-card p-3 rounded-xl flex items-center justify-between border-l-4 border-l-amber-500">
         <div>
-          <span class="text-[10px] sm:text-[11px] font-bold text-amber-700 uppercase">සටහන් කළ පන්ති</span>
+          <span class="text-[10px] font-bold text-amber-700 uppercase">සටහන් කළ පන්ති</span>
           <div class="flex items-baseline gap-1 mt-0.5">
-            <span id="kpi_classes_done" class="text-xl sm:text-3xl font-black mono-num text-amber-900">0/23</span>
+            <span id="kpi_classes_done" class="text-xl sm:text-2xl font-black mono-num text-amber-900">0/23</span>
           </div>
         </div>
-        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-50 flex items-center justify-center text-base sm:text-xl text-amber-600">📋</div>
+        <div class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-lg text-amber-600">📋</div>
       </div>
     </section>
 
     <!-- Class Teacher Quick Attendance Entry -->
-    <section class="max-w-[1520px] mx-auto glass-card-dark p-3 sm:p-5 rounded-2xl text-white no-print">
-      <div class="flex flex-wrap items-center justify-between border-b border-white/10 pb-2.5 mb-3 gap-2">
+    <section class="max-w-[1520px] mx-auto glass-card-dark p-3.5 sm:p-5 rounded-2xl text-white no-print shadow-xl">
+      <div class="flex flex-wrap items-center justify-between border-b border-white/10 pb-3 mb-3 gap-2">
         <div class="flex items-center gap-2">
-          <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center text-sm sm:text-base font-black shadow">✍️</div>
+          <div class="w-8 h-8 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center text-base font-black shadow">✍️</div>
           <div>
             <h2 class="text-xs sm:text-sm font-black text-amber-300">පන්තිභාර ගුරු පැමිණීම් සටහන</h2>
-            <p class="text-[10px] text-slate-300">පැමිණීම සටහන් කර Save කරන්න</p>
+            <p class="text-[10px] text-slate-300">පන්තිය Click කර පැමිණීම සටහන් කර Save කරන්න (පහළ වගුවට සෘජුව Scroll වේ)</p>
           </div>
         </div>
-        <div id="classStatusTag" class="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-400 text-slate-950 flex items-center gap-1 shadow">
-          <span>⏳</span> තෝරන්න
+        
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 bg-slate-900/90 border border-amber-400/50 px-3 py-1 rounded-xl text-[11px] font-bold shadow-inner">
+            <span class="text-amber-300">තෝරාගත් පන්තියේ ලේඛනය:</span>
+            <span class="text-blue-200">පි: <b id="tp_disp_regB" class="mono-num text-white">0</b></span>
+            <span class="text-slate-500">|</span>
+            <span class="text-pink-200">ගැ: <b id="tp_disp_regG" class="mono-num text-white">0</b></span>
+            <span class="text-slate-500">|</span>
+            <span class="text-amber-200">මුළු: <b id="tp_disp_regTot" class="mono-num text-amber-300">0</b></span>
+          </div>
+
+          <div id="classStatusTag" class="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-400 text-slate-950 flex items-center gap-1 shadow">
+            <span>⏳</span> තෝරන්න
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Class Selection Click Buttons (Horizontally Scrollable) -->
+      <div class="mb-3.5 bg-slate-900/80 p-2 sm:p-3 rounded-xl border border-white/10">
+        <div class="flex items-center justify-between text-[11px] font-bold text-amber-300 mb-1.5 px-0.5">
+          <span>👇 පන්තියක් Click කර තෝරන්න (1 - 13C):</span>
+          <span class="text-[9.5px] text-slate-400 font-normal">දකුණට/වමට Scroll කර බලන්න ➡️</span>
+        </div>
+        
+        <input type="hidden" id="teacherClassSelectVal" value="primary|1">
+        
+        <!-- Buttons Container with Scrollbar -->
+        <div id="topClassButtonsContainer" class="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 custom-scroll">
+          <!-- Populated dynamically: 1, 2, 3, 4A, 4B... up to 13C -->
         </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 items-end">
-        <div class="lg:col-span-3">
-          <label class="block text-[11px] font-bold text-blue-200 mb-1">1. ශ්‍රේණිය හා පන්තිය:</label>
-          <select id="teacherClassSelect" class="w-full bg-white text-slate-900 font-bold text-xs sm:text-sm rounded-xl p-2.5 border-2 border-amber-400 focus:outline-none shadow cursor-pointer" onchange="onTeacherClassChanged()"></select>
-        </div>
-
-        <div class="lg:col-span-3">
-          <label class="block text-[11px] font-bold text-amber-200 mb-1">2. ගුරුභවතාගේ නම:</label>
+        <!-- Teacher Name -->
+        <div class="lg:col-span-4">
+          <label class="block text-[11px] font-bold text-amber-200 mb-1">ගුරුභවතාගේ නම:</label>
           <input type="text" id="tp_teacherName" list="staffNamesDataList" placeholder="නම ඇතුළත් කරන්න..." class="w-full bg-slate-900 text-white font-bold text-xs rounded-xl p-2.5 border border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-300 placeholder-slate-400">
           <datalist id="staffNamesDataList"></datalist>
         </div>
 
-        <div class="lg:col-span-2 bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20">
+        <!-- Register Count Editor (Boys & Girls) -->
+        <div class="lg:col-span-3 bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20">
           <div class="text-[10px] font-bold text-amber-300 uppercase mb-1 flex justify-between">
-            <span>ලේඛනය</span>
+            <span>ලේඛනය සංස්කරණය</span>
             <span>එකතුව: <b id="tp_regTotal" class="text-white mono-num">0</b></span>
           </div>
           <div class="grid grid-cols-2 gap-1.5">
             <div>
               <span class="text-[9px] text-blue-200 block">පිරිමි</span>
-              <input type="number" id="tp_regB" class="w-full bg-slate-800 text-white font-bold text-center text-xs rounded-lg p-1.5 border border-slate-600 mono-num" min="0" onchange="updateClassRegisterFromTeacher()">
+              <input type="number" id="tp_regB" class="w-full bg-slate-800 text-white font-bold text-center text-xs rounded-lg p-1.5 border border-slate-600 mono-num" min="0" oninput="updateClassRegisterFromTeacher()">
             </div>
             <div>
               <span class="text-[9px] text-blue-200 block">ගැහැණු</span>
-              <input type="number" id="tp_regG" class="w-full bg-slate-800 text-white font-bold text-center text-xs rounded-lg p-1.5 border border-slate-600 mono-num" min="0" onchange="updateClassRegisterFromTeacher()">
+              <input type="number" id="tp_regG" class="w-full bg-slate-800 text-white font-bold text-center text-xs rounded-lg p-1.5 border border-slate-600 mono-num" min="0" oninput="updateClassRegisterFromTeacher()">
             </div>
           </div>
         </div>
 
-        <div class="lg:col-span-2 bg-blue-950/80 p-2 sm:p-2.5 rounded-xl border-2 border-emerald-400">
+        <!-- Today Attendance Entry -->
+        <div class="lg:col-span-3 bg-blue-950/80 p-2 sm:p-2.5 rounded-xl border-2 border-emerald-400 shadow-md">
           <div class="text-[10px] font-bold text-emerald-300 uppercase mb-1 flex justify-between">
             <span>අද පැමිණීම</span>
             <span>එකතුව: <b id="tp_attTotal" class="text-amber-300 mono-num">-</b></span>
@@ -427,21 +485,22 @@
           <div class="grid grid-cols-2 gap-1.5">
             <div>
               <span class="text-[9px] text-emerald-200 block">පිරිමි</span>
-              <input type="number" id="tp_attB" placeholder="-" class="w-full bg-white text-blue-950 font-black text-center text-sm rounded-lg p-1.5 border border-emerald-400 mono-num" min="0" oninput="calculateTeacherLivePreview()">
+              <input type="number" id="tp_attB" placeholder="-" class="w-full bg-white text-blue-950 font-black text-center text-sm rounded-lg p-1.5 border border-emerald-400 mono-num focus:ring-2 focus:ring-emerald-400 outline-none" min="0" oninput="calculateTeacherLivePreview()">
             </div>
             <div>
               <span class="text-[9px] text-emerald-200 block">ගැහැණු</span>
-              <input type="number" id="tp_attG" placeholder="-" class="w-full bg-white text-blue-950 font-black text-center text-sm rounded-lg p-1.5 border border-emerald-400 mono-num" min="0" oninput="calculateTeacherLivePreview()">
+              <input type="number" id="tp_attG" placeholder="-" class="w-full bg-white text-blue-950 font-black text-center text-sm rounded-lg p-1.5 border border-emerald-400 mono-num focus:ring-2 focus:ring-emerald-400 outline-none" min="0" oninput="calculateTeacherLivePreview()">
             </div>
           </div>
         </div>
 
+        <!-- Actions & Live Stats -->
         <div class="lg:col-span-2 flex flex-col justify-end gap-1.5">
           <div class="grid grid-cols-2 gap-1.5">
-            <button onclick="saveTeacherAttendanceAction()" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-xs py-2.5 rounded-xl shadow">
+            <button onclick="saveTeacherAttendanceAction()" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-xs py-2.5 rounded-xl shadow transition">
               💾 Save
             </button>
-            <button onclick="clearSingleClassAttendance()" class="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-xs py-2.5 rounded-xl border border-slate-600">
+            <button onclick="clearSingleClassAttendance()" class="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-xs py-2.5 rounded-xl border border-slate-600 transition">
               ✖ Clear
             </button>
           </div>
@@ -453,199 +512,203 @@
       </div>
     </section>
 
-    <!-- Whiteboard Surface -->
-    <section class="max-w-[1520px] mx-auto whiteboard-surface p-2.5 sm:p-5">
-      <div class="border-b-2 border-slate-900 pb-2 mb-3 text-center">
-        <div class="flex items-center justify-between flex-wrap gap-1.5">
-          <span class="text-[10px] sm:text-xs font-black px-2.5 py-0.5 bg-slate-900 text-white rounded-lg">පාසල් පුවරුව</span>
-          <h2 class="text-sm sm:text-xl font-black text-slate-900">
-            ශිෂ්‍ය දෛනික පැමිණීම - <span id="yearDisplay" class="mono-num text-blue-900">2026</span>
-          </h2>
-          <span class="text-[10px] sm:text-xs font-bold text-slate-600 mono-num">
-            දිනය: <span id="whiteboardHeaderDate" class="text-blue-900 font-extrabold">2026.10</span>
-          </span>
+    <!-- Whiteboard Surface Matching Physical Board Format -->
+    <section class="max-w-[1520px] mx-auto whiteboard-surface p-2 sm:p-4 bg-white">
+      <!-- Board Header -->
+      <div class="border-b-2 border-slate-900 pb-2 mb-2 flex items-center justify-between flex-wrap gap-2">
+        <div class="w-10 sm:w-12 h-10 sm:h-12 border border-slate-400 rounded-full flex items-center justify-center font-bold text-xs bg-slate-50">
+          🏫
         </div>
-        
-        <div class="grid grid-cols-2 gap-2 mt-2">
-          <div class="bg-gradient-to-r from-blue-900 to-indigo-900 text-white text-[11px] sm:text-xs font-extrabold py-1.5 px-2 rounded-lg">
-            ප්‍රාථමික (1 - 5)
-          </div>
-          <div class="bg-gradient-to-r from-slate-900 to-blue-950 text-white text-[11px] sm:text-xs font-extrabold py-1.5 px-2 rounded-lg">
-            ද්විතීක (6 - 13)
-          </div>
+        <div class="text-center flex-1">
+          <h2 class="text-base sm:text-2xl font-black text-slate-900 tracking-tight">
+            ශිෂ්‍යයන්ගේ දෛනික පැමිණීම - <span id="yearDisplay" class="mono-num text-blue-900">2026</span>
+          </h2>
+        </div>
+        <div class="text-right">
+          <span class="text-xs font-bold text-slate-600 mono-num">දිනය: <b id="whiteboardHeaderDate" class="text-blue-950 font-black">2026.10.</b></span>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
-        <div class="lg:col-span-5 space-y-3">
-          <div class="overflow-x-auto rounded-lg border border-slate-900">
-            <table class="board-grid" id="primaryTable">
-              <thead>
-                <tr>
-                  <th rowspan="2" class="w-10 bg-slate-200">ශ්‍රේණිය</th>
-                  <th colspan="3" class="bg-slate-100">ලේඛනයේ ගණන</th>
-                  <th colspan="3" class="bg-blue-50 text-blue-950">දෛනික පැමිණීම</th>
-                  <th rowspan="2" class="w-24 bg-slate-200">ගුරුභවතා</th>
-                </tr>
-                <tr>
-                  <th class="w-9">පි</th>
-                  <th class="w-9">ගැ</th>
-                  <th class="w-10 bg-slate-200">එකතුව</th>
-                  <th class="w-9 text-blue-800">පි</th>
-                  <th class="w-9 text-blue-800">ගැ</th>
-                  <th class="w-10 bg-blue-100 text-blue-950 font-black">එකතුව</th>
-                </tr>
-              </thead>
-              <tbody id="primaryTableBody"></tbody>
-              <tfoot>
-                <tr class="bg-amber-100 font-black text-slate-950 border-t-2 border-slate-900">
-                  <td class="bg-amber-200">එකතුව</td>
-                  <td id="pri_tot_reg_b" class="mono-num">0</td>
-                  <td id="pri_tot_reg_g" class="mono-num">0</td>
-                  <td id="pri_tot_reg_all" class="bg-amber-300 mono-num">0</td>
-                  <td id="pri_tot_att_b" class="text-blue-900 mono-num">-</td>
-                  <td id="pri_tot_att_g" class="text-blue-900 mono-num">-</td>
-                  <td id="pri_tot_att_all" class="bg-blue-200 text-blue-950 mono-num">-</td>
-                  <td class="text-[9px] text-slate-500 font-bold bg-slate-100">-</td>
-                </tr>
-              </tfoot>
-            </table>
+      <!-- Main Board Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 border-2 border-slate-900">
+        
+        <!-- PRIMARY SECTION (1 - 5) -->
+        <div class="lg:col-span-5 border-b-2 lg:border-b-0 lg:border-r-2 border-slate-900 flex flex-col justify-between">
+          <div>
+            <div class="bg-white border-b-2 border-slate-900 p-1.5 text-center">
+              <h3 class="text-sm sm:text-base font-black text-slate-900">ප්‍රාථමික අංශය</h3>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="board-grid" id="primaryTable">
+                <thead>
+                  <tr>
+                    <th rowspan="2" class="w-10 bg-slate-100">ශ්‍රේණිය</th>
+                    <th colspan="3" class="bg-slate-50">ලේඛනයේ ගණන</th>
+                    <th colspan="3" class="bg-blue-50/70 text-blue-950">දෛනික පැමිණීම</th>
+                  </tr>
+                  <tr>
+                    <th class="w-10">පිරිමි</th>
+                    <th class="w-10">ගැහැණු</th>
+                    <th class="w-12 bg-slate-100">එකතුව</th>
+                    <th class="w-10 text-blue-900">පිරිමි</th>
+                    <th class="w-10 text-blue-900">ගැහැණු</th>
+                    <th class="w-12 bg-blue-100 text-blue-950">එකතුව</th>
+                  </tr>
+                </thead>
+                <tbody id="primaryTableBody"></tbody>
+                <tfoot>
+                  <tr class="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-900">
+                    <td class="bg-slate-200">එකතුව</td>
+                    <td id="pri_tot_reg_b" class="mono-num">0</td>
+                    <td id="pri_tot_reg_g" class="mono-num">0</td>
+                    <td id="pri_tot_reg_all" class="bg-slate-200 mono-num">0</td>
+                    <td id="pri_tot_att_b" class="text-blue-900 mono-num">-</td>
+                    <td id="pri_tot_att_g" class="text-blue-900 mono-num">-</td>
+                    <td id="pri_tot_att_all" class="bg-blue-100 text-blue-950 mono-num">-</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
 
-          <div class="overflow-x-auto rounded-lg border border-slate-900">
-            <div class="text-[11px] font-black text-slate-900 p-1.5 bg-slate-100 border-b border-slate-900">විස්තරය (Sectional Matrix Analysis)</div>
-            <table class="board-grid text-[11px]">
+          <!-- Sectional Matrix Analysis Table -->
+          <div class="border-t-2 border-slate-900 mt-2">
+            <table class="board-grid text-[10.5px]">
               <thead>
-                <tr class="bg-slate-200 text-slate-900">
+                <tr class="bg-slate-100">
                   <th class="text-left px-2">විස්තරය</th>
-                  <th class="w-10">1 - 5</th>
-                  <th class="w-10">6 - 9</th>
-                  <th class="w-10">10 - 11</th>
-                  <th class="w-10">12 - 13</th>
+                  <th class="w-9">1 - 5</th>
+                  <th class="w-9">6 - 9</th>
+                  <th class="w-9">10 - 11</th>
+                  <th class="w-9">12 - 13</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td class="text-left px-2 font-medium">ලේඛනය: පිරිමි</td>
-                  <td id="mat_reg_b_1_5" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_b_6_9" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_b_10_11" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_b_12_13" class="font-bold mono-num">0</td>
+                  <td class="text-left px-2">ලේඛනයට අනුව පිරිමි</td>
+                  <td id="mat_reg_b_1_5" class="mono-num font-bold">0</td>
+                  <td id="mat_reg_b_6_9" class="mono-num font-bold">0</td>
+                  <td id="mat_reg_b_10_11" class="mono-num font-bold">0</td>
+                  <td id="mat_reg_b_12_13" class="mono-num font-bold">0</td>
                 </tr>
                 <tr>
-                  <td class="text-left px-2 font-medium">ලේඛනය: ගැහැණු</td>
-                  <td id="mat_reg_g_1_5" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_b_6_9" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_b_10_11" class="font-bold mono-num">0</td>
-                  <td id="mat_reg_b_12_13" class="font-bold mono-num">0</td>
+                  <td class="text-left px-2">ලේඛනයට අනුව ගැහැණු</td>
+                  <td id="mat_reg_g_1_5" class="mono-num font-bold">0</td>
+                  <td id="mat_reg_g_6_9" class="mono-num font-bold">0</td>
+                  <td id="mat_reg_g_10_11" class="mono-num font-bold">0</td>
+                  <td id="mat_reg_g_12_13" class="mono-num font-bold">0</td>
                 </tr>
-                <tr class="bg-slate-100 font-black">
-                  <td class="text-left px-2">ලේඛනයේ මුළු එකතුව</td>
-                  <td id="mat_reg_tot_1_5" class="mono-num">0</td>
-                  <td id="mat_reg_tot_6_9" class="mono-num">0</td>
-                  <td id="mat_reg_tot_10_11" class="mono-num">0</td>
-                  <td id="mat_reg_tot_12_13" class="mono-num">0</td>
+                <tr class="bg-slate-50 font-black">
+                  <td class="text-left px-2">ලේඛනයට අනුව මුළු සංඛ්‍යාව</td>
+                  <td id="mat_reg_tot_1_5" class="mono-num font-black">0</td>
+                  <td id="mat_reg_tot_6_9" class="mono-num font-black">0</td>
+                  <td id="mat_reg_tot_10_11" class="mono-num font-black">0</td>
+                  <td id="mat_reg_tot_12_13" class="mono-num font-black">0</td>
                 </tr>
-                <tr class="border-t-2 border-slate-900 text-blue-900">
-                  <td class="text-left px-2 font-bold">පැමිණි: පිරිමි</td>
-                  <td id="mat_att_b_1_5" class="font-bold mono-num">-</td>
-                  <td id="mat_att_b_6_9" class="font-bold mono-num">-</td>
-                  <td id="mat_att_b_10_11" class="font-bold mono-num">-</td>
-                  <td id="mat_att_b_12_13" class="font-bold mono-num">-</td>
+                <tr class="border-t-2 border-slate-900 text-blue-900 font-bold">
+                  <td class="text-left px-2">අද දින පැමිණි පිරිමි ළමුන්</td>
+                  <td id="mat_att_b_1_5" class="mono-num">-</td>
+                  <td id="mat_att_b_6_9" class="mono-num">-</td>
+                  <td id="mat_att_b_10_11" class="mono-num">-</td>
+                  <td id="mat_att_b_12_13" class="mono-num">-</td>
                 </tr>
-                <tr class="text-blue-900">
-                  <td class="text-left px-2 font-bold">පැමිණි: ගැහැණු</td>
-                  <td id="mat_att_g_1_5" class="font-bold mono-num">-</td>
-                  <td id="mat_att_g_6_9" class="font-bold mono-num">-</td>
-                  <td id="mat_att_g_10_11" class="font-bold mono-num">-</td>
-                  <td id="mat_att_g_12_13" class="font-bold mono-num">-</td>
+                <tr class="text-blue-900 font-bold">
+                  <td class="text-left px-2">අද දින පැමිණි ගැහැණු ළමුන්</td>
+                  <td id="mat_att_g_1_5" class="mono-num">-</td>
+                  <td id="mat_att_g_6_9" class="mono-num">-</td>
+                  <td id="mat_att_g_10_11" class="mono-num">-</td>
+                  <td id="mat_att_g_12_13" class="mono-num">-</td>
                 </tr>
-                <tr class="bg-blue-100 border-t-2 border-slate-900 text-blue-950 font-black">
-                  <td class="text-left px-2">පැමිණි මුළු එකතුව</td>
-                  <td id="mat_att_tot_1_5" class="mono-num">-</td>
-                  <td id="mat_att_tot_6_9" class="mono-num">-</td>
-                  <td id="mat_att_tot_10_11" class="mono-num">-</td>
-                  <td id="mat_att_tot_12_13" class="mono-num">-</td>
+                <tr class="bg-blue-100/70 border-t-2 border-slate-900 text-blue-950 font-black">
+                  <td class="text-left px-2">අද දින පැමිණි මුළු සිසුන්</td>
+                  <td id="mat_att_tot_1_5" class="mono-num font-black">-</td>
+                  <td id="mat_att_tot_6_9" class="mono-num font-black">-</td>
+                  <td id="mat_att_tot_10_11" class="mono-num font-black">-</td>
+                  <td id="mat_att_tot_12_13" class="mono-num font-black">-</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Secondary Table -->
-        <div class="lg:col-span-7 space-y-3">
-          <div class="overflow-x-auto rounded-lg border border-slate-900">
-            <table class="board-grid" id="secondaryTable">
-              <thead>
-                <tr>
-                  <th rowspan="2" class="w-10 bg-slate-200">ශ්‍රේණිය</th>
-                  <th colspan="3" class="bg-slate-100">ලේඛනයේ ගණන</th>
-                  <th colspan="3" class="bg-blue-50 text-blue-950">දෛනික පැමිණීම</th>
-                  <th rowspan="2" class="w-24 bg-slate-200">ගුරුභවතා</th>
-                </tr>
-                <tr>
-                  <th class="w-9">පි</th>
-                  <th class="w-9">ගැ</th>
-                  <th class="w-10 bg-slate-200">එකතුව</th>
-                  <th class="w-9 text-blue-800">පි</th>
-                  <th class="w-9 text-blue-800">ගැ</th>
-                  <th class="w-10 bg-blue-100 text-blue-950 font-black">එකතුව</th>
-                </tr>
-              </thead>
-              <tbody id="secondaryTableBody"></tbody>
-              <tfoot>
-                <tr class="bg-amber-100 font-black text-slate-950 border-t-2 border-slate-900">
-                  <td class="bg-amber-200">එකතුව</td>
-                  <td id="sec_tot_reg_b" class="mono-num">0</td>
-                  <td id="sec_tot_reg_g" class="mono-num">0</td>
-                  <td id="sec_tot_reg_all" class="bg-amber-300 mono-num">0</td>
-                  <td id="sec_tot_att_b" class="text-blue-900 mono-num">-</td>
-                  <td id="sec_tot_att_g" class="text-blue-900 mono-num">-</td>
-                  <td id="sec_tot_att_all" class="bg-blue-200 text-blue-950 mono-num">-</td>
-                  <td class="text-[9px] text-slate-500 font-bold bg-slate-100">-</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          <!-- Grand Total Box -->
-          <div class="border-2 border-slate-900 p-2.5 sm:p-4 bg-slate-50 rounded-xl">
-            <div class="text-xs sm:text-sm font-extrabold text-slate-900 mb-2 border-b border-slate-300 pb-1 flex flex-wrap justify-between items-center gap-1.5">
-              <span>🏆 පාසලේ මුළු දෛනික පැමිණීම</span>
-              <span id="grandPercentageBadge" class="text-[10px] sm:text-xs bg-slate-700 text-white px-2.5 py-0.5 rounded-full font-mono font-bold">රැඳී සිටී</span>
+        <!-- SECONDARY SECTION (6 - 13C) -->
+        <div class="lg:col-span-7 flex flex-col justify-between">
+          <div>
+            <div class="bg-white border-b-2 border-slate-900 p-1.5 text-center">
+              <h3 class="text-sm sm:text-base font-black text-slate-900">ද්විතීක අංශය</h3>
             </div>
 
-            <div class="grid grid-cols-3 gap-1.5 text-center">
-              <div class="border border-slate-300 p-1.5 sm:p-2 bg-white rounded-lg">
-                <span class="block text-[10px] sm:text-xs font-bold text-slate-600">පිරිමි</span>
-                <span id="grand_att_boys" class="text-lg sm:text-2xl font-black mono-num text-blue-900">-</span>
-                <span class="block text-[9px] sm:text-[10px] text-slate-500 font-semibold mt-0.5">ලේ: <b id="grand_reg_boys" class="mono-num text-slate-800">0</b></span>
+            <div class="overflow-x-auto">
+              <table class="board-grid" id="secondaryTable">
+                <thead>
+                  <tr>
+                    <th rowspan="2" class="w-10 bg-slate-100">ශ්‍රේණිය</th>
+                    <th colspan="3" class="bg-slate-50">ලේඛනයේ ගණන</th>
+                    <th colspan="3" class="bg-blue-50/70 text-blue-950">දෛනික පැමිණීම</th>
+                  </tr>
+                  <tr>
+                    <th class="w-10">පිරිමි</th>
+                    <th class="w-10">ගැහැණු</th>
+                    <th class="w-12 bg-slate-100">එකතුව</th>
+                    <th class="w-10 text-blue-900">පිරිමි</th>
+                    <th class="w-10 text-blue-900">ගැහැණු</th>
+                    <th class="w-12 bg-blue-100 text-blue-950">එකතුව</th>
+                  </tr>
+                </thead>
+                <tbody id="secondaryTableBody"></tbody>
+                <tfoot>
+                  <tr class="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-900">
+                    <td class="bg-slate-200">එකතුව</td>
+                    <td id="sec_tot_reg_b" class="mono-num">0</td>
+                    <td id="sec_tot_reg_g" class="mono-num">0</td>
+                    <td id="sec_tot_reg_all" class="bg-slate-200 mono-num">0</td>
+                    <td id="sec_tot_att_b" class="text-blue-900 mono-num">-</td>
+                    <td id="sec_tot_att_g" class="text-blue-900 mono-num">-</td>
+                    <td id="sec_tot_att_all" class="bg-blue-100 text-blue-950 mono-num">-</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Grand Total Box Matching Board Bottom Right -->
+          <div class="border-t-2 border-slate-900 bg-white p-2">
+            <div class="text-center font-black text-xs text-slate-900 mb-1">
+              අද දින පැමිණීම
+            </div>
+
+            <div class="grid grid-cols-3 gap-1 border border-slate-900 p-1 rounded">
+              <div class="text-center border-r border-slate-900 pr-1">
+                <span class="block text-[10px] font-bold text-slate-700">පිරිමි</span>
+                <span id="grand_att_boys" class="text-base sm:text-xl font-black mono-num text-blue-900">-</span>
+                <span class="block text-[8.5px] text-slate-500 font-semibold">ලේ: <b id="grand_reg_boys" class="mono-num text-slate-900">0</b></span>
               </div>
 
-              <div class="border border-slate-300 p-1.5 sm:p-2 bg-white rounded-lg">
-                <span class="block text-[10px] sm:text-xs font-bold text-slate-600">ගැහැණු</span>
-                <span id="grand_att_girls" class="text-lg sm:text-2xl font-black mono-num text-blue-900">-</span>
-                <span class="block text-[9px] sm:text-[10px] text-slate-500 font-semibold mt-0.5">ලේ: <b id="grand_reg_girls" class="mono-num text-slate-800">0</b></span>
+              <div class="text-center border-r border-slate-900 pr-1">
+                <span class="block text-[10px] font-bold text-slate-700">ගැහැණු</span>
+                <span id="grand_att_girls" class="text-base sm:text-xl font-black mono-num text-blue-900">-</span>
+                <span class="block text-[8.5px] text-slate-500 font-semibold">ලේ: <b id="grand_reg_girls" class="mono-num text-slate-900">0</b></span>
               </div>
 
-              <div class="border-2 border-blue-900 p-1.5 sm:p-2 bg-blue-50 rounded-lg">
-                <span class="block text-[10px] sm:text-xs font-bold text-blue-950">මුළු එකතුව</span>
-                <span id="grand_att_total" class="text-lg sm:text-2xl font-black mono-num text-blue-950">-</span>
-                <span class="block text-[9px] sm:text-[10px] text-blue-900 font-bold mt-0.5">ලේ: <b id="grand_reg_total" class="mono-num">0</b></span>
+              <div class="text-center bg-blue-50/80 rounded">
+                <span class="block text-[10px] font-black text-blue-950">පාසලේ මුළු පැමිණීම</span>
+                <span id="grand_att_total" class="text-base sm:text-xl font-black mono-num text-blue-950">-</span>
+                <span class="block text-[8.5px] text-blue-900 font-bold">ලේ: <b id="grand_reg_total" class="mono-num">0</b></span>
               </div>
             </div>
           </div>
+
         </div>
+
       </div>
     </section>
   </main>
 
-  <!-- ================= TAB 2: STAFF ATTENDANCE (READ-ONLY STATUS) ================= -->
+  <!-- ================= TAB 2: STAFF ATTENDANCE ================= -->
   <main id="teachersTab" class="tab-content hidden space-y-3 sm:space-y-4">
-    <!-- Hierarchy Breakdown Cards -->
     <section class="max-w-[1520px] mx-auto no-print">
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-        
         <div class="position-chip border-l-4 border-l-rose-500 shrink-0">
           <div class="flex justify-between items-center">
             <span class="text-[9.5px] font-black text-rose-900 truncate">1. විදුහල්පති</span>
@@ -670,7 +733,6 @@
           <div class="w-full bg-purple-100 rounded-full h-1 mt-0.5"><div id="cat_bar_vp" class="bg-purple-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <!-- Assistant Vice Principal (AVP) -->
         <div class="position-chip border-l-4 border-l-indigo-500 shrink-0">
           <div class="flex justify-between items-center">
             <span class="text-[9.5px] font-black text-indigo-900 truncate">3. ස.නි.වි</span>
@@ -683,7 +745,6 @@
           <div class="w-full bg-indigo-100 rounded-full h-1 mt-0.5"><div id="cat_bar_avp" class="bg-indigo-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <!-- Sectional Head (SECTION_HEAD) -->
         <div class="position-chip border-l-4 border-l-cyan-600 shrink-0">
           <div class="flex justify-between items-center">
             <span class="text-[9.5px] font-black text-cyan-900 truncate">4. අංශ ප්‍රධාන</span>
@@ -696,7 +757,6 @@
           <div class="w-full bg-cyan-100 rounded-full h-1 mt-0.5"><div id="cat_bar_section_head" class="bg-cyan-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <!-- Teacher Service -->
         <div class="position-chip border-l-4 border-l-blue-600 shrink-0">
           <div class="flex justify-between items-center">
             <span class="text-[9.5px] font-black text-blue-900 truncate">5. ගුරු සේවය</span>
@@ -709,7 +769,6 @@
           <div class="w-full bg-blue-100 rounded-full h-1 mt-0.5"><div id="cat_bar_teacher" class="bg-blue-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <!-- Development Officers -->
         <div class="position-chip border-l-4 border-l-amber-500 shrink-0">
           <div class="flex justify-between items-center">
             <span class="text-[9.5px] font-black text-amber-900 truncate">6. සංවර්ධන නි.</span>
@@ -722,7 +781,6 @@
           <div class="w-full bg-amber-100 rounded-full h-1 mt-0.5"><div id="cat_bar_dev" class="bg-amber-600 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
 
-        <!-- Support Staff -->
         <div class="position-chip border-l-4 border-l-slate-600 shrink-0">
           <div class="flex justify-between items-center">
             <span class="text-[9.5px] font-black text-slate-800 truncate">7. සහයක කා.ම.</span>
@@ -734,11 +792,10 @@
           </div>
           <div class="w-full bg-slate-200 rounded-full h-1 mt-0.5"><div id="cat_bar_support" class="bg-slate-700 h-1 rounded-full" style="width: 100%"></div></div>
         </div>
-
       </div>
     </section>
 
-    <!-- Controls & Filters (Edit Buttons Removed - Pure Filter) -->
+    <!-- Controls & Filters -->
     <section class="max-w-[1520px] mx-auto glass-card p-2.5 sm:p-3 rounded-2xl flex flex-wrap items-center justify-between gap-2 no-print">
       <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
         <select id="staffDesignationFilter" class="bg-white border border-slate-300 text-xs font-bold rounded-xl px-2 py-2 text-slate-800 outline-none flex-1 sm:flex-initial" onchange="filterStaffTable()">
@@ -759,7 +816,7 @@
       </div>
     </section>
 
-    <!-- Staff List (Locked Status Column - Read Only Badge) -->
+    <!-- Staff List -->
     <section class="max-w-[1520px] mx-auto glass-card rounded-2xl p-2 sm:p-4">
       <div class="overflow-x-auto rounded-xl border border-slate-200">
         <table class="w-full text-xs min-w-[500px]">
@@ -777,7 +834,7 @@
     </section>
   </main>
 
-  <!-- ================= TAB 3: LEAVE APPLICATION & SUMMARY ================= -->
+  <!-- TAB 3: LEAVE APPLICATION & SUMMARY -->
   <main id="leaveApplyTab" class="tab-content hidden space-y-4">
     <div class="max-w-[960px] mx-auto glass-card p-4 sm:p-7 rounded-2xl sm:rounded-3xl border border-slate-200">
       <div class="border-b border-slate-200 pb-3 mb-4 flex items-center justify-between">
@@ -894,9 +951,8 @@
     </div>
   </main>
 
-  <!-- ================= TAB 4: PRINCIPAL APPROVAL & FULL ADMIN ================= -->
+  <!-- TAB 4: PRINCIPAL APPROVAL & FULL ADMIN -->
   <main id="adminApprovalTab" class="tab-content hidden space-y-3 sm:space-y-4">
-    <!-- Lock Screen -->
     <div id="adminLockScreen" class="max-w-[420px] mx-auto glass-card p-5 sm:p-7 rounded-2xl sm:rounded-3xl border-2 border-slate-900 text-center my-6">
       <div class="w-12 h-12 bg-rose-100 text-rose-950 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-2">🔒</div>
       <h2 class="text-base sm:text-lg font-black text-slate-900 mb-1">විදුහල්පති / Admin රහස්‍ය පිවිසුම</h2>
@@ -912,7 +968,6 @@
       </div>
     </div>
 
-    <!-- Principal Authenticated Dashboard -->
     <div id="adminDashboardScreen" class="hidden max-w-[1520px] mx-auto glass-card p-3 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4">
       <div class="border-b border-slate-200 pb-2.5 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-2">
@@ -958,7 +1013,6 @@
           <div>
             <label class="block text-[11px] font-bold text-slate-700 mb-1">සාමාජිකයා තෝරන්න:</label>
             <select id="adminEditStaffStatusSelect" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 font-bold text-xs text-slate-900 outline-none focus:ring-2 focus:ring-purple-600" onchange="loadStaffForStatusEdit()">
-              <!-- Populated dynamically -->
             </select>
           </div>
           <div>
@@ -994,7 +1048,6 @@
           <div>
             <label class="block text-[11px] font-bold text-slate-700 mb-1">ශ්‍රේණිය / පන්තිය තෝරන්න:</label>
             <select id="adminEditClassSelect" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 font-bold text-xs text-slate-900 outline-none focus:ring-2 focus:ring-blue-600" onchange="loadClassForRegisterEdit()">
-              <!-- Populated dynamically -->
             </select>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -1022,7 +1075,6 @@
           <div>
             <label class="block text-[11px] font-bold text-slate-700 mb-1">සාමාජිකයා තෝරන්න:</label>
             <select id="adminEditStaffSelect" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 font-bold text-xs text-slate-900 outline-none focus:ring-2 focus:ring-blue-600" onchange="loadStaffForRoleEdit()">
-              <!-- Populated dynamically -->
             </select>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -1051,7 +1103,7 @@
     </div>
   </main>
 
-  <!-- ================= MOBILE STICKY BOTTOM NAVIGATION BAR ================= -->
+  <!-- MOBILE STICKY BOTTOM NAVIGATION BAR -->
   <nav id="bottomNav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex justify-around shadow-2xl">
     <button onclick="switchTab('studentsTab')" id="mTab_studentsTab" class="flex flex-col items-center justify-center p-1 text-blue-700 font-black">
       <span class="text-lg">🎓</span>
@@ -1072,35 +1124,35 @@
     </button>
   </nav>
 
-  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <!-- JAVASCRIPT LOGIC -->
   <script>
     const officialRegisteredBaseline = {
       primary: [
-        { grade: "1",   regB: 10, regG: 11, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "2",   regB: 16, regG: 14, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "3",   regB: 19, regG: 16, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "4A",  regB: 11, regG: 11, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "4B",  regB: 13, regG: 9,  attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "5A",  regB: 12, regG: 9,  attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "5B",  regB: 12, regG: 11, attB: null, attG: null, marked: false, teacher: "", time: "" }
+        { grade: "1",   regB: 10, regG: 11, attB: null, attG: null, marked: false },
+        { grade: "2",   regB: 16, regG: 14, attB: null, attG: null, marked: false },
+        { grade: "3",   regB: 19, regG: 16, attB: null, attG: null, marked: false },
+        { grade: "4A",  regB: 11, regG: 11, attB: null, attG: null, marked: false },
+        { grade: "4B",  regB: 13, regG: 9,  attB: null, attG: null, marked: false },
+        { grade: "5A",  regB: 12, regG: 9,  attB: null, attG: null, marked: false },
+        { grade: "5B",  regB: 12, regG: 11, attB: null, attG: null, marked: false }
       ],
       secondary: [
-        { grade: "6A",  regB: 20, regG: 18, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "6B",  regB: 24, regG: 11, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "7A",  regB: 14, regG: 12, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "7B",  regB: 17, regG: 13, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "8A",  regB: 16, regG: 15, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "8B",  regB: 16, regG: 17, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "9A",  regB: 16, regG: 18, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "9B",  regB: 22, regG: 17, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "10A", regB: 13, regG: 19, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "10B", regB: 13, regG: 15, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "11A", regB: 16, regG: 9,  attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "11B", regB: 16, regG: 9,  attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "12A", regB: 10, regG: 22, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "12C", regB: 4,  regG: 10, attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "13A", regB: 0,  regG: 5,  attB: null, attG: null, marked: false, teacher: "", time: "" },
-        { grade: "13C", regB: 0,  regG: 3,  attB: null, attG: null, marked: false, teacher: "", time: "" }
+        { grade: "6A",  regB: 20, regG: 18, attB: null, attG: null, marked: false },
+        { grade: "6B",  regB: 24, regG: 11, attB: null, attG: null, marked: false },
+        { grade: "7A",  regB: 14, regG: 12, attB: null, attG: null, marked: false },
+        { grade: "7B",  regB: 17, regG: 13, attB: null, attG: null, marked: false },
+        { grade: "8A",  regB: 16, regG: 15, attB: null, attG: null, marked: false },
+        { grade: "8B",  regB: 16, regG: 17, attB: null, attG: null, marked: false },
+        { grade: "9A",  regB: 16, regG: 18, attB: null, attG: null, marked: false },
+        { grade: "9B",  regB: 22, regG: 17, attB: null, attG: null, marked: false },
+        { grade: "10A", regB: 13, regG: 19, attB: null, attG: null, marked: false },
+        { grade: "10B", regB: 13, regG: 15, attB: null, attG: null, marked: false },
+        { grade: "11A", regB: 16, regG: 9,  attB: null, attG: null, marked: false },
+        { grade: "11B", regB: 16, regG: 9,  attB: null, attG: null, marked: false },
+        { grade: "12A", regB: 10, regG: 22, attB: null, attG: null, marked: false },
+        { grade: "12C", regB: 4,  regG: 10, attB: null, attG: null, marked: false },
+        { grade: "13A", regB: 0,  regG: 5,  attB: null, attG: null, marked: false },
+        { grade: "13C", regB: 0,  regG: 3,  attB: null, attG: null, marked: false }
       ]
     };
 
@@ -1258,8 +1310,6 @@
             row.attB = null;
             row.attG = null;
             row.marked = false;
-            row.teacher = "";
-            row.time = "";
           });
         });
 
@@ -1279,16 +1329,14 @@
           row.attB = null;
           row.attG = null;
           row.marked = false;
-          row.teacher = "";
-          row.time = "";
         });
       });
 
       localStorage.setItem('local_school_last_reset', todayISO);
       window.saveAllLocal();
       renderAllTables();
-      populateTeacherClassSelect();
-      onTeacherClassChanged();
+      renderTopClassButtons();
+      onTeacherClassChanged(false);
       showToast("8:00 PM: ශිෂ්‍ය දෛනික පැමිණීම් Reset විය!", "⏰");
     }
 
@@ -1322,6 +1370,7 @@
       }
     }
 
+    // Render Student Table without Teacher column
     function renderTableRows(sectionKey, tbodyId) {
       const tbody = document.getElementById(tbodyId);
       tbody.innerHTML = "";
@@ -1337,32 +1386,22 @@
         let attTotDisplay = isMarked ? ((parseInt(row.attB, 10) || 0) + (parseInt(row.attG, 10) || 0)) : '-';
 
         const tr = document.createElement("tr");
+        tr.id = `row_${sectionKey}_${row.grade}`;
         tr.className = isMarked ? "row-completed transition-colors" : (idx % 2 === 1 ? "row-zebra" : "bg-white");
-
-        let teacherDisplay = '<span class="text-slate-400 font-normal text-[10px]">-</span>';
-        if (row.teacher) {
-          teacherDisplay = `
-            <div class="leading-tight flex flex-col items-center">
-              <span class="text-[10px] font-bold text-slate-800 truncate max-w-[90px]">${row.teacher}</span>
-              ${row.time ? `<span class="text-[8.5px] mono-num text-emerald-800 bg-emerald-100 px-1 rounded font-semibold mt-0.5">${row.time}</span>` : ''}
-            </div>
-          `;
-        }
 
         tr.innerHTML = `
           <td class="font-black text-slate-900 bg-slate-100">
             <div class="flex items-center justify-center gap-1">
               <span>${row.grade}</span>
-              ${isMarked ? '<span class="text-[8.5px] text-emerald-600 font-black">✓</span>' : ''}
+              ${isMarked ? '<span class="text-[8px] text-emerald-600 font-black">✓</span>' : ''}
             </div>
           </td>
-          <td><input type="number" min="0" value="${row.regB}" class="cell-input font-bold" onchange="updateDirectCell('${sectionKey}', ${idx}, 'regB', this.value)"></td>
-          <td><input type="number" min="0" value="${row.regG}" class="cell-input font-bold" onchange="updateDirectCell('${sectionKey}', ${idx}, 'regG', this.value)"></td>
+          <td><input type="number" min="0" value="${row.regB}" class="cell-input" onchange="updateDirectCell('${sectionKey}', ${idx}, 'regB', this.value)"></td>
+          <td><input type="number" min="0" value="${row.regG}" class="cell-input" onchange="updateDirectCell('${sectionKey}', ${idx}, 'regG', this.value)"></td>
           <td class="bg-slate-100 font-black mono-num text-slate-900">${regTot}</td>
-          <td><input type="number" min="0" placeholder="-" value="${attBDisplay}" class="cell-input att-val font-black" onchange="updateDirectCell('${sectionKey}', ${idx}, 'attB', this.value)"></td>
-          <td><input type="number" min="0" placeholder="-" value="${attGDisplay}" class="cell-input att-val font-black" onchange="updateDirectCell('${sectionKey}', ${idx}, 'attG', this.value)"></td>
+          <td><input type="number" min="0" placeholder="-" value="${attBDisplay}" class="cell-input att-val" onchange="updateDirectCell('${sectionKey}', ${idx}, 'attB', this.value)"></td>
+          <td><input type="number" min="0" placeholder="-" value="${attGDisplay}" class="cell-input att-val" onchange="updateDirectCell('${sectionKey}', ${idx}, 'attG', this.value)"></td>
           <td class="bg-blue-100/70 text-blue-950 font-black mono-num">${attTotDisplay}</td>
-          <td class="bg-white/80">${teacherDisplay}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1380,15 +1419,12 @@
 
         const r = window.activeData[sectionKey][index];
         r.marked = (r.attB !== null || r.attG !== null);
-        if (r.marked && !r.time) {
-          r.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
       }
 
       window.saveAllLocal();
       window.renderAllTables();
-      window.populateTeacherClassSelect();
-      window.onTeacherClassChanged();
+      renderTopClassButtons();
+      onTeacherClassChanged(false);
     };
 
     function calculateTotalsAndBreakdowns() {
@@ -1435,6 +1471,7 @@
       document.getElementById('sec_tot_att_g').innerText = sec_has_att ? sec_att_g : '-';
       document.getElementById('sec_tot_att_all').innerText = sec_has_att ? sec_att_tot : '-';
 
+      // Sectional Matrix Breakdown matching board
       let b_6_9 = 0, g_6_9 = 0, att_b_6_9 = 0, att_g_6_9 = 0, has_6_9 = false;
       let b_10_11 = 0, g_10_11 = 0, att_b_10_11 = 0, att_g_10_11 = 0, has_10_11 = false;
       let b_12_13 = 0, g_12_13 = 0, att_b_12_13 = 0, att_g_12_13 = 0, has_12_13 = false;
@@ -1530,66 +1567,143 @@
       calculateTotalsAndBreakdowns();
     };
 
-    window.populateTeacherClassSelect = function() {
-      const select = document.getElementById('teacherClassSelect');
-      const currentSelected = select.value;
-      select.innerHTML = "";
+    // ================= QUICK CLICK CLASS BUTTONS (CLICKABLE CHIPS) =================
+    window.renderTopClassButtons = function() {
+      const container = document.getElementById('topClassButtonsContainer');
+      if (!container) return;
+      container.innerHTML = "";
 
-      const priGroup = document.createElement("optgroup");
-      priGroup.label = "── ප්‍රාථමික (1 - 5) ──";
+      const currentVal = document.getElementById('teacherClassSelectVal').value;
+
+      // Group 1: Primary Section Buttons
+      const priDivider = document.createElement("div");
+      priDivider.className = "shrink-0 px-2 py-1 text-[9.5px] font-black text-blue-300 bg-blue-950/80 rounded-lg border border-blue-500/40";
+      priDivider.innerText = "ප්‍රාථමික:";
+      container.appendChild(priDivider);
+
       window.activeData.primary.forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = `primary|${c.grade}`;
+        const val = `primary|${c.grade}`;
+        const isSelected = (val === currentVal);
         const hasAtt = c.marked && c.attB !== null && c.attG !== null;
-        opt.innerText = `ශ්‍රේණිය ${c.grade} ${hasAtt ? '✓ (සටහන් විය)' : '⏳ (හිස්)'}`;
-        priGroup.appendChild(opt);
-      });
-      select.appendChild(priGroup);
 
-      const secGroup = document.createElement("optgroup");
-      secGroup.label = "── ද්විතීක (6 - 13) ──";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `shrink-0 px-3 py-1.5 rounded-xl font-black text-xs transition active:scale-95 flex items-center gap-1.5 shadow-sm border ${
+          isSelected 
+            ? 'bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-300 shadow-md scale-105' 
+            : (hasAtt 
+                ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 hover:bg-emerald-900' 
+                : 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700')
+        }`;
+        
+        btn.innerHTML = `
+          <span>${c.grade}</span>
+          ${hasAtt ? '<span class="text-[9px] text-emerald-400 font-extrabold">✓</span>' : ''}
+        `;
+
+        btn.onclick = () => {
+          document.getElementById('teacherClassSelectVal').value = val;
+          renderTopClassButtons();
+          onTeacherClassChanged(true); // Smooth scroll & highlight below
+        };
+
+        container.appendChild(btn);
+      });
+
+      // Group 2: Secondary Section Buttons
+      const secDivider = document.createElement("div");
+      secDivider.className = "shrink-0 ml-2 px-2 py-1 text-[9.5px] font-black text-indigo-300 bg-indigo-950/80 rounded-lg border border-indigo-500/40";
+      secDivider.innerText = "ද්විතීක:";
+      container.appendChild(secDivider);
+
       window.activeData.secondary.forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = `secondary|${c.grade}`;
+        const val = `secondary|${c.grade}`;
+        const isSelected = (val === currentVal);
         const hasAtt = c.marked && c.attB !== null && c.attG !== null;
-        opt.innerText = `ශ්‍රේණිය ${c.grade} ${hasAtt ? '✓ (සටහන් විය)' : '⏳ (හිස්)'}`;
-        secGroup.appendChild(opt);
-      });
-      select.appendChild(secGroup);
 
-      if (currentSelected) select.value = currentSelected;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `shrink-0 px-3 py-1.5 rounded-xl font-black text-xs transition active:scale-95 flex items-center gap-1.5 shadow-sm border ${
+          isSelected 
+            ? 'bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-300 shadow-md scale-105' 
+            : (hasAtt 
+                ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 hover:bg-emerald-900' 
+                : 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700')
+        }`;
+        
+        btn.innerHTML = `
+          <span>${c.grade}</span>
+          ${hasAtt ? '<span class="text-[9px] text-emerald-400 font-extrabold">✓</span>' : ''}
+        `;
+
+        btn.onclick = () => {
+          document.getElementById('teacherClassSelectVal').value = val;
+          renderTopClassButtons();
+          onTeacherClassChanged(true); // Smooth scroll & highlight below
+        };
+
+        container.appendChild(btn);
+      });
     };
 
     function getSelectedClassObj() {
-      const select = document.getElementById('teacherClassSelect');
-      if (!select.value) return null;
-      const [sec, grade] = select.value.split('|');
+      const val = document.getElementById('teacherClassSelectVal').value;
+      if (!val) return null;
+      const [sec, grade] = val.split('|');
       const item = window.activeData[sec].find(x => x.grade === grade);
       return { sec, grade, item };
     }
 
-    window.onTeacherClassChanged = function() {
+    // Scroll to and Highlight the Selected Class in the Physical Whiteboard Grid
+    function scrollToClassRow(sec, grade) {
+      document.querySelectorAll('.row-focus-highlight').forEach(el => el.classList.remove('row-focus-highlight'));
+
+      const targetId = `row_${sec}_${grade}`;
+      const rowElem = document.getElementById(targetId);
+      if (rowElem) {
+        rowElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        rowElem.classList.add('row-focus-highlight');
+
+        setTimeout(() => {
+          rowElem.classList.remove('row-focus-highlight');
+        }, 3500);
+      }
+    }
+
+    window.onTeacherClassChanged = function(shouldScroll = true) {
       const current = getSelectedClassObj();
       if (!current || !current.item) return;
 
       const item = current.item;
-      document.getElementById('tp_regB').value = item.regB;
-      document.getElementById('tp_regG').value = item.regG;
-      document.getElementById('tp_attB').value = item.attB !== null ? item.attB : '';
-      document.getElementById('tp_attG').value = item.attG !== null ? item.attG : '';
+      const regB = parseInt(item.regB, 10) || 0;
+      const regG = parseInt(item.regG, 10) || 0;
+      const regTot = regB + regG;
+
+      document.getElementById('tp_regB').value = regB;
+      document.getElementById('tp_regG').value = regG;
+      document.getElementById('tp_attB').value = (item.attB !== null && item.attB !== undefined) ? item.attB : '';
+      document.getElementById('tp_attG').value = (item.attG !== null && item.attG !== undefined) ? item.attG : '';
       document.getElementById('tp_teacherName').value = item.teacher || '';
+
+      document.getElementById('tp_disp_regB').innerText = regB;
+      document.getElementById('tp_disp_regG').innerText = regG;
+      document.getElementById('tp_disp_regTot').innerText = regTot;
 
       const statusTag = document.getElementById('classStatusTag');
       const isMarked = item.marked && item.attB !== null && item.attG !== null;
       if (isMarked) {
-        statusTag.className = "px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-400 text-emerald-950 flex items-center gap-1";
+        statusTag.className = "px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-400 text-emerald-950 flex items-center gap-1 shadow";
         statusTag.innerHTML = `<span>✓</span> ශ්‍රේණිය ${item.grade}: සටහන් විය`;
       } else {
-        statusTag.className = "px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-400 text-slate-950 flex items-center gap-1";
+        statusTag.className = "px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-amber-400 text-slate-950 flex items-center gap-1 shadow";
         statusTag.innerHTML = `<span>⏳</span> ශ්‍රේණිය ${item.grade}: හිස්`;
       }
 
       calculateTeacherLivePreview();
+
+      if (shouldScroll) {
+        scrollToClassRow(current.sec, current.grade);
+      }
     };
 
     function calculateTeacherLivePreview() {
@@ -1597,6 +1711,10 @@
       const regG = parseInt(document.getElementById('tp_regG').value, 10) || 0;
       const regTot = regB + regG;
       document.getElementById('tp_regTotal').innerText = regTot;
+
+      document.getElementById('tp_disp_regB').innerText = regB;
+      document.getElementById('tp_disp_regG').innerText = regG;
+      document.getElementById('tp_disp_regTot').innerText = regTot;
 
       const attBVal = document.getElementById('tp_attB').value.trim();
       const attGVal = document.getElementById('tp_attG').value.trim();
@@ -1608,11 +1726,11 @@
         return;
       }
 
-      const attB = parseInt(attBVal, 10) || 0;
-      const attG = parseInt(attGVal, 10) || 0;
+      const attB = attBVal === '' ? 0 : Math.max(0, parseInt(attBVal, 10) || 0);
+      const attG = attGVal === '' ? 0 : Math.max(0, parseInt(attGVal, 10) || 0);
       const attTot = attB + attG;
       const absentTot = Math.max(0, regTot - attTot);
-      const percentage = regTot > 0 ? ((attTot / regTot) * 100).toFixed(1) : 0;
+      const percentage = regTot > 0 ? ((attTot / regTot) * 100).toFixed(1) : "0.0";
 
       document.getElementById('tp_attTotal').innerText = attTot;
       document.getElementById('tp_absentTotal').innerText = absentTot;
@@ -1625,14 +1743,18 @@
 
       current.item.regB = parseInt(document.getElementById('tp_regB').value, 10) || 0;
       current.item.regG = parseInt(document.getElementById('tp_regG').value, 10) || 0;
+      
+      calculateTeacherLivePreview();
       window.saveAllLocal();
       renderAllTables();
-      calculateTeacherLivePreview();
     }
 
     function saveTeacherAttendanceAction() {
       const current = getSelectedClassObj();
-      if (!current || !current.item) return;
+      if (!current || !current.item) {
+        showToast("කරුණාකර පන්තියක් තෝරන්න.", "⚠️");
+        return;
+      }
 
       const attBVal = document.getElementById('tp_attB').value.trim();
       const attGVal = document.getElementById('tp_attG').value.trim();
@@ -1643,16 +1765,15 @@
         return;
       }
 
-      current.item.attB = parseInt(attBVal, 10) || 0;
-      current.item.attG = parseInt(attGVal, 10) || 0;
-      current.item.teacher = teacherNameVal || "පන්තිභාර ගුරු";
-      current.item.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      current.item.attB = attBVal === '' ? 0 : Math.max(0, parseInt(attBVal, 10) || 0);
+      current.item.attG = attGVal === '' ? 0 : Math.max(0, parseInt(attGVal, 10) || 0);
+      current.item.teacher = teacherNameVal || "";
       current.item.marked = true;
 
       window.saveAllLocal();
       renderAllTables();
-      populateTeacherClassSelect();
-      onTeacherClassChanged();
+      renderTopClassButtons();
+      onTeacherClassChanged(true);
       showToast(`ශ්‍රේණිය ${current.grade} පැමිණීම සුරකින ලදී!`, "💾");
     }
 
@@ -1664,7 +1785,6 @@
       current.item.attG = null;
       current.item.marked = false;
       current.item.teacher = "";
-      current.item.time = "";
 
       document.getElementById('tp_attB').value = '';
       document.getElementById('tp_attG').value = '';
@@ -1672,8 +1792,8 @@
 
       window.saveAllLocal();
       renderAllTables();
-      populateTeacherClassSelect();
-      onTeacherClassChanged();
+      renderTopClassButtons();
+      onTeacherClassChanged(true);
       showToast(`ශ්‍රේණිය ${current.grade} හිස් කරන ලදී.`, "🗑️");
     }
 
@@ -1687,7 +1807,6 @@
       return `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-800 border border-slate-300">🔧 ${role}</span>`;
     }
 
-    // Read-only status badge generator for Staff table
     function getStaffStatusBadge(status) {
       if (status === "LEAVE_PENDING") {
         return `<span class="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[10.5px] font-black px-2.5 py-1 rounded-lg animate-leave-pulse">⏳ Pending නිවාඩු</span>`;
@@ -1704,7 +1823,6 @@
       return `<span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10.5px] font-black px-2.5 py-1 rounded-lg">✅ පැමිණ ඇත</span>`;
     }
 
-    // Render Staff Table (Strictly Read-Only, No direct editing)
     window.renderStaffTable = function() {
       const tbody = document.getElementById('staffTableBody');
       tbody.innerHTML = "";
@@ -1889,7 +2007,6 @@
           else if (l.leaveType === "DUTY") dutyCount += days;
         });
 
-        // Half day counts as 0.5 (1/2) in total personal
         const personalTotal = casualCount + medicalCount + (halfDayCount * 0.5);
 
         totalCasual += casualCount;
@@ -1926,7 +2043,6 @@
             ${halfDayCount} ${halfDayCount > 0 ? `<span class="text-[9px] text-purple-600 block">(=${(halfDayCount * 0.5)})</span>` : ''}
           </td>
 
-          <!-- Personal Total (Highlights Red when > 10) -->
           <td class="mono-num font-black transition-colors ${isOverTen ? 'bg-rose-600 text-white font-extrabold shadow-inner text-sm' : (personalTotal > 0 ? 'bg-amber-100/90 text-amber-950 font-extrabold' : 'bg-slate-100/90 text-slate-400')}">
             ${personalTotal}
             ${isOverTen ? '<span class="block text-[8px] font-black uppercase text-amber-200">Alert > 10</span>' : ''}
@@ -2185,7 +2301,6 @@
       }
     }
 
-    // Principal Staff Status Management Functions
     window.populateAdminStaffStatusDropdown = function() {
       const sel = document.getElementById('adminEditStaffStatusSelect');
       if (!sel) return;
@@ -2241,7 +2356,6 @@
       }
     }
 
-    // Principal Register Edit Functions
     window.populateAdminClassRegisterSelect = function() {
       const sel = document.getElementById('adminEditClassSelect');
       if (!sel) return;
@@ -2259,7 +2373,7 @@
       sel.appendChild(priGroup);
 
       const secGroup = document.createElement("optgroup");
-      secGroup.label = "── ද්විතීක (6 - 13) ──";
+      secGroup.label = "── ද්විතීක (6 - 13C) ──";
       window.activeData.secondary.forEach(c => {
         const opt = document.createElement("option");
         opt.value = `secondary|${c.grade}`;
@@ -2305,12 +2419,11 @@
 
       window.saveAllLocal();
       renderAllTables();
-      populateTeacherClassSelect();
-      onTeacherClassChanged();
+      renderTopClassButtons();
+      onTeacherClassChanged(false);
       showToast(`ශ්‍රේණිය ${grade} ලේඛනයේ ගණන යාවත්කාලීන විය!`, "✅");
     };
 
-    // Role / Designation Edit Implementation
     window.populateAdminStaffEditDropdown = function() {
       const sel = document.getElementById('adminEditStaffSelect');
       if (!sel) return;
@@ -2364,14 +2477,12 @@
           r.attB = Math.max(0, r.regB - (idx % 3));
           r.attG = Math.max(0, r.regG - (idx % 2));
           r.marked = true;
-          r.teacher = "නියැදි ගුරු";
-          r.time = "07:45 AM";
         });
       });
       window.saveAllLocal();
       renderAllTables();
-      populateTeacherClassSelect();
-      onTeacherClassChanged();
+      renderTopClassButtons();
+      onTeacherClassChanged(false);
       showToast("නියැදි දත්ත පූරණය විය!", "🎉");
     }
 
@@ -2380,11 +2491,43 @@
       if (dateVal) {
         const parts = dateVal.split('-');
         const formatted = `${parts[0]}.${parts[1]}.${parts[2]}`;
-        document.getElementById('whiteboardHeaderDate').innerText = formatted;
+        document.getElementById('whiteboardHeaderDate').innerText = `${formatted}.`;
         document.getElementById('yearDisplay').innerText = parts[0];
         document.getElementById('headerYearBadge').innerText = parts[0];
       }
     }
+
+    // PWA Service Worker & Install Logic
+    let deferredPrompt;
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.log('ServiceWorker registration error:', err);
+        });
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.remove('hidden');
+    });
+
+    window.installPWAApp = function() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+          dismissPWABanner();
+        });
+      }
+    };
+
+    window.dismissPWABanner = function() {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.add('hidden');
+    };
 
     window.onload = function() {
       initLocalState();
@@ -2400,15 +2543,15 @@
 
       document.getElementById('yearDisplay').innerText = yyyy;
       document.getElementById('headerYearBadge').innerText = yyyy;
-      document.getElementById('whiteboardHeaderDate').innerText = `${yyyy}.${mm}.${dd}`;
+      document.getElementById('whiteboardHeaderDate').innerText = `${yyyy}.${mm}.${dd}.`;
 
       checkAutoResetEvening();
       setInterval(checkAutoResetEvening, 1000);
 
       populateTeacherNamesDatalist();
       renderAllTables();
-      populateTeacherClassSelect();
-      onTeacherClassChanged();
+      renderTopClassButtons();
+      onTeacherClassChanged(false);
       renderStaffTable();
       populateLeaveStaffDropdown();
       renderStaffLeaveSummaryTable();
